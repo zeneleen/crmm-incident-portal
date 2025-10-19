@@ -1,3 +1,29 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+// ✅ Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
+  authDomain: "crmm-cxb.firebaseapp.com",
+  projectId: "crmm-cxb",
+  storageBucket: "crmm-cxb.appspot.com",
+  messagingSenderId: "920459967885",
+  appId: "1:920459967885:web:402c2800ebe786ee5391c4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// === Main Script ===
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
@@ -9,17 +35,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
-  const BACKEND_URL = "https://crmm-incident-portal.onrender.com"; // ✅ change here
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
 
-  // Load users.json
+  // === Load users.json ===
   const response = await fetch("users.json");
   const users = await response.json();
 
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
+  // === Populate user dropdown ===
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
@@ -41,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // === Auto-update organisation field ===
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
@@ -52,6 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateOrg();
   };
 
+  // === Access control by role ===
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
     const orgField = row.querySelector(".organisation");
@@ -79,9 +107,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // === Add a new blank row ===
   const addNewRow = () => {
-    const newRow = tableBody.rows[0].cloneNode(true);
-    newRow.querySelectorAll("input, select").forEach(el => (el.value = ""));
+    const newRow = document.createElement("tr");
+    newRow.innerHTML = `
+      <td><input type="text" class="case_id" placeholder="Auto ID"></td>
+      <td><select class="user_id"></select></td>
+      <td><input type="text" class="organisation" disabled></td>
+      <td>
+        <select class="below18">
+          <option value="">-- Select --</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </td>
+      <td>
+        <select class="violence">
+          <option value="">-- Select --</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </td>
+      <td>
+        <select class="armedGroup">
+          <option value="">-- Select --</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </td>
+      <td><input type="text" class="incidentRemarks" placeholder="Remarks..."></td>
+      <td>
+        <select class="verifyStatus">
+          <option value="">-- Select --</option>
+          <option>Verified</option>
+          <option>Confirmed (to a reasonable level)</option>
+          <option>Unverified</option>
+        </select>
+      </td>
+      <td><input type="text" class="verifyRemarks" placeholder="Verification notes..."></td>
+    `;
     tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
     populateUserDropdown(select);
@@ -90,18 +154,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
   addRowBtn.addEventListener("click", addNewRow);
 
-  // ✅ Load CSV from Render backend
-  async function loadCSV() {
+  // === Load data from Firestore (role-based) ===
+  async function loadFirestoreData() {
     try {
-      const res = await fetch(`${BACKEND_URL}/CaseID.csv`);
-      if (!res.ok) throw new Error("Unable to load CSV");
-      const text = await res.text();
-      const parsed = Papa.parse(text, { header: true }).data;
+      let q;
+      if (user.type === "admin") {
+        q = collection(db, "incidents");
+      } else if (user.type === "supervisor") {
+        q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
+      } else if (user.type === "monitor") {
+        q = query(collection(db, "incidents"), where("user_id", "==", user.id));
+      }
 
+      const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
 
-      parsed.forEach(entry => {
-        const row = tableBody.insertRow();
+      snapshot.forEach(docSnap => {
+        const entry = docSnap.data();
+        const row = document.createElement("tr");
         row.innerHTML = `
           <td><input type="text" class="case_id" value="${entry.case_id || ""}"></td>
           <td><select class="user_id"></select></td>
@@ -138,30 +208,32 @@ document.addEventListener("DOMContentLoaded", async () => {
           </td>
           <td><input type="text" class="verifyRemarks" value="${entry.verifyRemarks || ""}"></td>
         `;
-        const userSelect = row.querySelector(".user_id");
-        populateUserDropdown(userSelect, entry.user_id);
+        const select = row.querySelector(".user_id");
+        populateUserDropdown(select, entry.user_id);
         linkUserToOrganisation(row);
         setAccessByRole(row);
+        tableBody.appendChild(row);
       });
+
       message.style.color = "green";
-      message.textContent = "Data loaded successfully.";
-    } catch (e) {
-      console.error("CSV load failed:", e);
-      message.style.color = "orange";
-      message.textContent = "⚠️ Could not load data — please check backend connection.";
+      message.textContent = `✅ Data loaded for ${user.type}`;
+    } catch (err) {
+      console.error("Firestore load failed:", err);
+      message.style.color = "red";
+      message.textContent = "⚠️ Could not load data from Firestore.";
     }
   }
 
-  await loadCSV();
+  await loadFirestoreData();
 
-  // ✅ Submit updates to backend
+  // === Submit and save data to Firestore ===
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const incidents = [];
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
-        case_id: row.querySelector(".case_id").value,
+        case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
         user_id: row.querySelector(".user_id").value,
         organisation: row.querySelector(".organisation").value,
         below18: row.querySelector(".below18").value,
@@ -174,26 +246,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     try {
-      const res = await fetch(`${BACKEND_URL}/update_csv`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(incidents)
-      });
-      const result = await res.json();
-      if (result.status === "success") {
-        message.style.color = "green";
-        message.textContent = "✅ Data saved successfully on server.";
-      } else {
-        throw new Error(result.message);
+      for (const incident of incidents) {
+        await setDoc(doc(db, "incidents", incident.case_id), incident);
       }
-    } catch (e) {
-      console.error("Submit failed:", e);
+      message.style.color = "green";
+      message.textContent = "✅ Data successfully saved to Firestore.";
+    } catch (err) {
+      console.error("Save error:", err);
       message.style.color = "red";
-      message.textContent = "❌ Could not connect to server. Please check backend.";
+      message.textContent = "❌ Failed to save data to Firestore.";
     }
   });
 
-  // Logout
+  // === Logout ===
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem("loggedInUser");
     window.location.replace("index.html");
