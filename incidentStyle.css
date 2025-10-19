@@ -1,9 +1,10 @@
 /* ====== GENERAL LAYOUT ====== */
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f4f7fa;
+  background: #f4f6f9;
   margin: 0;
   padding: 0;
+  color: #333;
 }
 
 /* ====== HEADER ====== */
@@ -12,7 +13,7 @@ header {
   justify-content: space-between;
   align-items: center;
   background-color: #2b3a67;
-  color: white;
+  color: #fff;
   padding: 12px 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
@@ -24,11 +25,11 @@ header .user-info {
 header button {
   background: #f04e4e;
   border: none;
-  color: white;
+  color: #fff;
   padding: 8px 16px;
   border-radius: 5px;
   cursor: pointer;
-  transition: 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out;
 }
 
 header button:hover {
@@ -44,6 +45,7 @@ h2 {
   text-align: center;
   color: #2b3a67;
   margin-bottom: 25px;
+  font-weight: 600;
 }
 
 /* ====== TABLE DESIGN ====== */
@@ -51,79 +53,99 @@ table {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
   overflow: hidden;
 }
 
 th {
   background-color: #2b3a67;
-  color: white;
+  color: #fff;
   font-size: 14px;
   font-weight: 600;
-  text-align: left;
+  text-align: center;
   padding: 12px 10px;
   border: none;
 }
 
 td {
-  background-color: #ffffff;
   padding: 10px;
-  border: 1px solid #e3e6ea;
+  border: 1px solid #e2e6ea;
   vertical-align: middle;
+  background-color: #fff;
 }
 
 tr:hover td {
   background-color: #f9fbfd;
 }
 
-/* ====== FIX CASE_ID AND USER_ID VISIBILITY ====== */
+/* ====== COLUMN WIDTHS & ALIGNMENT ====== */
+td:nth-child(1),
+th:nth-child(1) {
+  width: 120px;
+  text-align: center;
+}
 
-/* Case ID column */
-td:nth-child(1) input.case_id {
-  width: 130px;
+td:nth-child(2),
+th:nth-child(2) {
+  width: 160px;
+  text-align: center;
+}
+
+/* ====== CASE_ID INPUT ====== */
+input.case_id {
+  width: 100%;
   text-align: center;
   font-weight: 500;
-  letter-spacing: 0.5px;
   background-color: #fdfdfd;
   border: 1px solid #ccd2da;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-/* User ID dropdown (fixed padding & arrow spacing) */
-td:nth-child(2) select.user_id {
-  width: 160px;
+input.case_id:focus {
+  border-color: #1cabe2;
+  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
+  outline: none;
+}
+
+/* ====== USER_ID SELECT ====== */
+select.user_id {
+  width: 100%;
+  height: 38px;
+  text-align: left;
   font-weight: 500;
   background-color: #fdfdfd;
-  padding: 8px 36px 8px 10px; /* more space for text + arrow */
   border: 1px solid #ccd2da;
-  border-radius: 5px;
+  border-radius: 6px;
+  padding: 8px 38px 8px 10px;
+  appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
                     linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: right 14px center, right 8px center; /* push arrow further right */
+  background-position: right 14px center, right 8px center;
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
-  text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: all 0.2s;
 }
 
-/* When focused */
 select.user_id:focus {
   border-color: #1cabe2;
   box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
   outline: none;
 }
 
-/* ====== INPUTS & DROPDOWNS ====== */
+/* ====== OTHER INPUTS & SELECTS ====== */
 input, select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #cbd3da;
-  border-radius: 5px;
+  border-radius: 6px;
   background-color: #f9fafc;
   font-size: 14px;
-  box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s;
 }
 
 input:focus, select:focus {
@@ -132,22 +154,9 @@ input:focus, select:focus {
   outline: none;
 }
 
-/* Global select arrow styling */
-select {
-  height: 40px;
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%),
-                    linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 18px) center, calc(100% - 12px) center;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-}
-
-/* Disabled input style */
 input:disabled {
-  background: #e9ecf0;
+  background: #eef0f4;
   color: #555;
-  cursor: not-allowed;
 }
 
 /* ====== SUBMIT BUTTON ====== */
@@ -156,18 +165,19 @@ input:disabled {
   width: 220px;
   margin: 25px auto;
   background-color: #2b3a67;
-  color: white;
+  color: #fff;
   border: none;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.1s;
 }
 
 #submitBtn:hover {
   background-color: #3b4d91;
+  transform: translateY(-1px);
 }
 
 /* ====== SUCCESS MESSAGE ====== */
@@ -175,6 +185,7 @@ input:disabled {
   text-align: center;
   font-weight: 500;
   margin-top: 10px;
+  color: #2b3a67;
 }
 
 /* ====== ADD ROW BUTTON ====== */
@@ -192,7 +203,7 @@ input:disabled {
   padding: 6px 14px;
   border-radius: 6px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background-color 0.2s;
   display: inline-block;
 }
 
@@ -215,12 +226,9 @@ input:disabled {
     padding: 8px 10px;
   }
 
-  td:nth-child(1) input.case_id {
-    width: 100%;
-  }
-
-  td:nth-child(2) select.user_id {
-    width: 100%;
+  td:nth-child(1), td:nth-child(2),
+  th:nth-child(1), th:nth-child(2) {
+    width: auto;
   }
 
   #submitBtn {
