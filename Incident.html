@@ -160,7 +160,7 @@
 
       // Load CSV
       try {
-        const res = await fetch("http://127.0.0.1:5000/CaseID.csv");
+        const res = await fetch("https://crmm-incident-portal.onrender.com/CaseID.csv");
         const text = await res.text();
         const parsed = Papa.parse(text, { header: true }).data;
         parsed.filter(r => Object.values(r).some(v => v)).forEach(r => addRow(r));
@@ -188,7 +188,7 @@
         });
 
         try {
-          const res = await fetch("http://127.0.0.1:5000/update_csv", {
+          const res = await fetch("https://crmm-incident-portal.onrender.com/update_csv", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(incidents)
