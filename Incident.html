@@ -48,10 +48,16 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {
-      getFirestore, collection, getDocs, addDoc, doc, setDoc
+      getFirestore,
+      collection,
+      getDocs,
+      query,
+      where,
+      setDoc,
+      doc
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // ✅ Your Firebase configuration (from Firebase console)
+    // ✅ Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
       authDomain: "crmm-cxb.firebaseapp.com",
@@ -66,7 +72,7 @@
 
     // === Main Script ===
     document.addEventListener("DOMContentLoaded", async () => {
-      const user = JSON.parse(localStorage.getItem("loggedInUser")) || {id:"admin", type:"admin", organisation:"UNICEF"};
+      const user = JSON.parse(localStorage.getItem("loggedInUser")) || { id: "admin", type: "admin", organisation: "UNICEF" };
       document.getElementById("userInfo").textContent =
         `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
@@ -77,6 +83,7 @@
 
       addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
+      // === Populate user dropdown ===
       const populateUserDropdown = (select, preselectedUserId = "") => {
         select.innerHTML = "";
         let availableUsers = users;
@@ -95,6 +102,7 @@
         else if (user.type === "monitor") select.value = user.id;
       };
 
+      // === Link user_id to organisation ===
       const linkUserToOrganisation = (row) => {
         const userSelect = row.querySelector(".user_id");
         const orgInput = row.querySelector(".organisation");
@@ -106,6 +114,7 @@
         updateOrg();
       };
 
+      // === Access control based on user role ===
       const setAccessByRole = (row) => {
         const caseIdField = row.querySelector(".case_id");
         const orgField = row.querySelector(".organisation");
@@ -130,6 +139,7 @@
         }
       };
 
+      // === Add new table row ===
       const addRow = (data = {}) => {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -177,12 +187,23 @@
 
       addRowBtn.addEventListener("click", () => addRow());
 
-      // === Load data from Firestore ===
+      // === Load data from Firestore (role-based) ===
       try {
-        const snapshot = await getDocs(collection(db, "incidents"));
+        let q;
+        if (user.type === "admin") {
+          q = collection(db, "incidents");
+        } else if (user.type === "supervisor") {
+          q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
+        } else if (user.type === "monitor") {
+          q = query(collection(db, "incidents"), where("user_id", "==", user.id));
+        }
+
+        const snapshot = await getDocs(q);
+        tableBody.innerHTML = "";
         snapshot.forEach(docSnap => addRow(docSnap.data()));
+
         message.style.color = "green";
-        message.textContent = "✅ Data loaded from Firestore.";
+        message.textContent = `✅ Data loaded for ${user.type}`;
       } catch (err) {
         console.error("Firestore load failed:", err);
         message.style.color = "red";
