@@ -9,17 +9,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
-  // Load users.json
-  const response = await fetch("users.json");
-  const users = await response.json();
-
+  const BACKEND_URL = "https://crmm-incident-portal.onrender.com"; // ✅ change here
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
 
+  // Load users.json
+  const response = await fetch("users.json");
+  const users = await response.json();
+
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
-  // Populate dropdown
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
@@ -28,15 +28,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if (user.type === "monitor") {
       availableUsers = [user];
     }
-
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
       opt.value = u.id;
       opt.textContent = u.id;
       select.appendChild(opt);
     });
-
-    // Select the prefilled user_id if given, else current user (for monitor)
     if (preselectedUserId) {
       select.value = preselectedUserId;
     } else if (user.type === "monitor") {
@@ -44,21 +41,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // Link user_id → organisation auto-update
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
-
     const updateOrg = () => {
       const selectedUser = users.find(u => u.id === userSelect.value);
       orgInput.value = selectedUser ? selectedUser.organisation : "";
     };
-
     userSelect.addEventListener("change", updateOrg);
     updateOrg();
   };
 
-  // Access control
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
     const orgField = row.querySelector(".organisation");
@@ -69,7 +62,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       row.querySelectorAll("input, select").forEach(el => el.disabled = false);
       return;
     }
-
     if (user.type === "supervisor") {
       orgField.disabled = true;
       verifyStatus.disabled = true;
@@ -77,7 +69,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       caseIdField.disabled = true;
       return;
     }
-
     if (user.type === "monitor") {
       const editable = [".below18", ".violence", ".armedGroup", ".incidentRemarks"];
       row.querySelectorAll("input, select").forEach(el => {
@@ -88,12 +79,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // Add new row
   const addNewRow = () => {
     const newRow = tableBody.rows[0].cloneNode(true);
     newRow.querySelectorAll("input, select").forEach(el => (el.value = ""));
     tableBody.appendChild(newRow);
-
     const select = newRow.querySelector(".user_id");
     populateUserDropdown(select);
     linkUserToOrganisation(newRow);
@@ -101,20 +90,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
   addRowBtn.addEventListener("click", addNewRow);
 
-  // Load CSV and populate table
+  // ✅ Load CSV from Render backend
   async function loadCSV() {
     try {
-      const res = await fetch("CaseID.csv");
+      const res = await fetch(`${BACKEND_URL}/CaseID.csv`);
       if (!res.ok) throw new Error("Unable to load CSV");
       const text = await res.text();
       const parsed = Papa.parse(text, { header: true }).data;
 
-      // Remove default blank row first
       tableBody.innerHTML = "";
 
       parsed.forEach(entry => {
         const row = tableBody.insertRow();
-
         row.innerHTML = `
           <td><input type="text" class="case_id" value="${entry.case_id || ""}"></td>
           <td><select class="user_id"></select></td>
@@ -151,21 +138,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           </td>
           <td><input type="text" class="verifyRemarks" value="${entry.verifyRemarks || ""}"></td>
         `;
-
-        // ✅ Now populate dropdown *after* row is inserted
         const userSelect = row.querySelector(".user_id");
         populateUserDropdown(userSelect, entry.user_id);
         linkUserToOrganisation(row);
         setAccessByRole(row);
       });
+      message.style.color = "green";
+      message.textContent = "Data loaded successfully.";
     } catch (e) {
       console.error("CSV load failed:", e);
+      message.style.color = "orange";
+      message.textContent = "⚠️ Could not load data — please check backend connection.";
     }
   }
+
   await loadCSV();
 
-  // Submit: save CSV
-  document.getElementById("incidentForm").addEventListener("submit", (e) => {
+  // ✅ Submit updates to backend
+  document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const incidents = [];
@@ -183,15 +173,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
-    const csv = Papa.unparse(incidents);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "CaseID.csv";
-    link.click();
-
-    message.style.color = "green";
-    message.textContent = "Data saved successfully (CSV downloaded).";
+    try {
+      const res = await fetch(`${BACKEND_URL}/update_csv`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(incidents)
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        message.style.color = "green";
+        message.textContent = "✅ Data saved successfully on server.";
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (e) {
+      console.error("Submit failed:", e);
+      message.style.color = "red";
+      message.textContent = "❌ Could not connect to server. Please check backend.";
+    }
   });
 
   // Logout
