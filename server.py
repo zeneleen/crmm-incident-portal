@@ -1,75 +1,77 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 import csv
 import os
 
 app = Flask(__name__)
-CORS(app)  # allow GitHub Pages frontend to access this backend
+CORS(app, resources={r"/*": {"origins": "*"}})  # ✅ enables all origins (GitHub Pages included)
 
-# === Serve the CaseID.csv file ===
-@app.route("/CaseID.csv", methods=["GET"])
+# --- Serve CSV file ---
+@app.route("/CaseID.csv", methods=["GET", "OPTIONS"])
 def serve_csv():
     try:
-        # Get the full path
         csv_path = os.path.join(os.getcwd(), "CaseID.csv")
 
-        # Debug log (will show in Render logs)
-        print("📁 Current directory:", os.getcwd())
-        print("📄 Files here:", os.listdir(os.getcwd()))
-
-        # If file doesn't exist, create a blank one with headers
+        # If not found, create one automatically
         if not os.path.exists(csv_path):
-            print("⚠️ CaseID.csv not found — creating new file.")
             with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=[
-                    "case_id",
-                    "user_id",
-                    "organisation",
-                    "Survivor(s) under 18?",
-                    "At least one of the eight serious child rights violations?",
-                    "Armed group involved?",
-                    "Incident remarks",
-                    "Verification status",
-                    "Verification remarks"
+                    "case_id", "user_id", "organisation",
+                    "below18", "violence", "armedGroup",
+                    "incidentRemarks", "verifyStatus", "verifyRemarks"
                 ])
                 writer.writeheader()
 
-        return send_from_directory(os.getcwd(), "CaseID.csv", as_attachment=False)
+        response = make_response(send_from_directory(os.getcwd(), "CaseID.csv"))
+        # ✅ Add CORS headers manually to file responses
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
 
     except Exception as e:
-        print("❌ Error serving CSV:", str(e))
+        print("❌ Error serving CSV:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# === Update the CaseID.csv file ===
-@app.route("/update_csv", methods=["POST"])
+# --- Update CSV file ---
+@app.route("/update_csv", methods=["POST", "OPTIONS"])
 def update_csv():
+    if request.method == "OPTIONS":
+        # ✅ Handle preflight CORS requests
+        response = make_response()
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
     try:
         data = request.get_json()
-
         if not data:
             return jsonify({"status": "error", "message": "No data received"}), 400
 
         fieldnames = list(data[0].keys())
-
-        # Write the updated CSV
         with open("CaseID.csv", "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(data)
 
-        print("✅ CSV successfully updated with", len(data), "rows.")
-        return jsonify({"status": "success"})
+        response = jsonify({"status": "success"})
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
 
     except Exception as e:
-        print("❌ Error updating CSV:", str(e))
-        return jsonify({"status": "error", "message": str(e)}), 500
+        print("❌ Error updating CSV:", e)
+        response = jsonify({"status": "error", "message": str(e)})
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response, 500
 
 
-# === Health check route (optional) ===
+# --- Health check route ---
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"status": "running", "message": "CRMM Incident Portal backend active"})
 
 
 if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
