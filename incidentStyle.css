@@ -4,6 +4,7 @@ body {
   background: #f4f7fa;
   margin: 0;
   padding: 0;
+  color: #333;
 }
 
 /* ====== HEADER ====== */
@@ -44,37 +45,66 @@ h2 {
   text-align: center;
   color: #2b3a67;
   margin-bottom: 25px;
+  font-weight: 600;
 }
 
 /* ====== TABLE DESIGN ====== */
 table {
+  border-collapse: collapse;
   width: 100%;
-  border-collapse: collapse; 
   background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
   overflow: hidden;
+  display: block;
+  max-height: 70vh; /* Scroll height */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccd2da #f5f6f8;
 }
 
-th {
+/* ====== FIXED HEADER ====== */
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+thead th {
   background-color: #2b3a67;
   color: white;
   font-size: 14px;
   font-weight: 600;
-  text-align: left;
+  text-align: center;
   padding: 12px 10px;
-  border: none;               
+  border-bottom: 2px solid #dee2e6;
 }
 
+/* ====== TABLE BODY ====== */
 td {
   background-color: #ffffff;
   padding: 10px;
   border: 1px solid #e3e6ea;
   vertical-align: middle;
+  text-align: center;
 }
 
 tr:hover td {
-  background-color: #1CABE2;
+  background-color: #e8f5fb;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* ====== COLUMN WIDTHS ====== */
+td:nth-child(1),
+th:nth-child(1) {
+  width: 120px;
+  text-align: center;
+}
+
+td:nth-child(2),
+th:nth-child(2) {
+  width: 160px;
+  text-align: center;
 }
 
 /* ====== INPUTS & DROPDOWNS ====== */
@@ -95,14 +125,20 @@ input:focus, select:focus {
   outline: none;
 }
 
+/* ====== CUSTOM SELECT STYLING ====== */
 select {
   height: 40px;
   appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%),
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
                     linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+  background-position: calc(100% - 18px) center, calc(100% - 12px) center;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
+}
+
+select.user_id {
+  padding-right: 36px; /* prevent arrow overlap */
+  background-position: right 14px center, right 8px center;
 }
 
 input:disabled {
@@ -124,11 +160,12 @@ input:disabled {
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.1s;
 }
 
 #submitBtn:hover {
   background-color: #3b4d91;
+  transform: translateY(-1px);
 }
 
 /* ====== SUCCESS MESSAGE ====== */
@@ -138,26 +175,7 @@ input:disabled {
   margin-top: 10px;
 }
 
-/* ====== SMALL SCREEN RESPONSIVE ====== */
-@media (max-width: 768px) {
-  main {
-    padding: 20px;
-  }
-
-  table {
-    font-size: 13px;
-  }
-
-  input, select {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-
-  #submitBtn {
-    width: 100%;
-  }
-}
-
+/* ====== ADD ROW BUTTON ====== */
 .table-actions {
   text-align: right;
   margin: 12px 0;
@@ -173,9 +191,30 @@ input:disabled {
   border-radius: 6px;
   cursor: pointer;
   transition: 0.2s;
-  display: inline-block;   
+  display: inline-block;
 }
 
 #addRowBtn:hover {
   background-color: #218838;
+}
+
+/* ====== SMALL SCREEN RESPONSIVE ====== */
+@media (max-width: 768px) {
+  main {
+    padding: 20px;
+  }
+
+  table {
+    font-size: 13px;
+    max-height: 60vh;
+  }
+
+  input, select {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  #submitBtn {
+    width: 100%;
+  }
 }
