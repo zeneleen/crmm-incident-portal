@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Incident Status | CRMM Portal</title>
   <link rel="stylesheet" href="incidentStyle.css">
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body>
@@ -45,7 +44,27 @@
     </form>
   </main>
 
-  <script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, addDoc, doc, setDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // ✅ Your Firebase configuration (from Firebase console)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
+      authDomain: "crmm-cxb.firebaseapp.com",
+      projectId: "crmm-cxb",
+      storageBucket: "crmm-cxb.appspot.com",
+      messagingSenderId: "920459967885",
+      appId: "1:920459967885:web:402c2800ebe786ee5391c4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // === Main Script ===
     document.addEventListener("DOMContentLoaded", async () => {
       const user = JSON.parse(localStorage.getItem("loggedInUser")) || {id:"admin", type:"admin", organisation:"UNICEF"};
       document.getElementById("userInfo").textContent =
@@ -158,18 +177,19 @@
 
       addRowBtn.addEventListener("click", () => addRow());
 
-      // Load CSV
+      // === Load data from Firestore ===
       try {
-        const res = await fetch("https://crmm-incident-portal.onrender.com/CaseID.csv");
-        const text = await res.text();
-        const parsed = Papa.parse(text, { header: true }).data;
-        parsed.filter(r => Object.values(r).some(v => v)).forEach(r => addRow(r));
+        const snapshot = await getDocs(collection(db, "incidents"));
+        snapshot.forEach(docSnap => addRow(docSnap.data()));
+        message.style.color = "green";
+        message.textContent = "✅ Data loaded from Firestore.";
       } catch (err) {
-        console.error("CSV load failed:", err);
-        message.textContent = "⚠️ Could not load CaseID.csv — ensure server.py is running.";
+        console.error("Firestore load failed:", err);
+        message.style.color = "red";
+        message.textContent = "⚠️ Could not load data from Firestore.";
       }
 
-      // Submit
+      // === Submit and save to Firestore ===
       document.getElementById("incidentForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const incidents = [];
@@ -188,25 +208,19 @@
         });
 
         try {
-          const res = await fetch("https://crmm-incident-portal.onrender.com/update_csv", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(incidents)
-          });
-          const result = await res.json();
-          if (result.status === "success") {
-            message.style.color = "green";
-            message.textContent = "✅ CaseID.csv updated successfully!";
-          } else {
-            message.style.color = "red";
-            message.textContent = "⚠️ Update failed: " + result.message;
+          for (const incident of incidents) {
+            await setDoc(doc(db, "incidents", incident.case_id || `case_${Date.now()}`), incident);
           }
+          message.style.color = "green";
+          message.textContent = "✅ Data successfully saved to Firestore.";
         } catch (err) {
+          console.error("Save error:", err);
           message.style.color = "red";
-          message.textContent = "⚠️ Could not connect to server. Start server.py first.";
+          message.textContent = "⚠️ Failed to save data to Firestore.";
         }
       });
 
+      // === Logout ===
       document.getElementById("logoutBtn").addEventListener("click", () => {
         localStorage.removeItem("loggedInUser");
         window.location.replace("index.html");
