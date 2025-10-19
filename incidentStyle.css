@@ -1,181 +1,27 @@
-/* ====== GENERAL LAYOUT ====== */
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f4f7fa;
-  margin: 0;
-  padding: 0;
-}
-
-/* ====== HEADER ====== */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #2b3a67;
-  color: white;
-  padding: 12px 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-header .user-info {
-  font-size: 15px;
-}
-
-header button {
-  background: #f04e4e;
-  border: none;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.2s ease-in-out;
-}
-
-header button:hover {
-  background: #d94242;
-}
-
-/* ====== MAIN CONTENT ====== */
-main {
-  padding: 40px 60px;
-}
-
-h2 {
+/* ====== FIX COLUMN WIDTHS ====== */
+td:nth-child(1) input.case_id {
+  width: 120px; /* Make case_id clearly visible */
   text-align: center;
-  color: #2b3a67;
-  margin-bottom: 25px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  background-color: #fdfdfd;
 }
 
-/* ====== TABLE DESIGN ====== */
-table {
-  width: 100%;
-  border-collapse: collapse; 
-  background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  overflow: hidden;
+td:nth-child(2) select.user_id {
+  width: 140px; /* Make user_id dropdown fully visible */
+  font-weight: 500;
+  background-color: #fdfdfd;
 }
 
-th {
-  background-color: #2b3a67;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  text-align: left;
-  padding: 12px 10px;
-  border: none;               
+/* Optional: make dropdown arrow more visible */
+select.user_id {
+  background-position: calc(100% - 12px) center;
+  background-size: 7px 7px;
 }
 
-td {
-  background-color: #ffffff;
-  padding: 10px;
-  border: 1px solid #e3e6ea;
-  vertical-align: middle;
-}
-
-tr:hover td {
-  background-color: #f9fbfd;
-}
-
-/* ====== INPUTS & DROPDOWNS ====== */
+/* Keep the rest of your inputs responsive */
 input, select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #cbd3da;
-  border-radius: 5px;
-  background-color: #f9fafc;
-  font-size: 14px;
+  max-width: 100%;
   box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-input:focus, select:focus {
-  border-color: #1cabe2;
-  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
-  outline: none;
-}
-
-select {
-  height: 40px;
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%),
-                    linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-}
-
-input:disabled {
-  background: #e9ecf0;
-  color: #555;
-  cursor: not-allowed;
-}
-
-/* ====== SUBMIT BUTTON ====== */
-#submitBtn {
-  display: block;
-  width: 220px;
-  margin: 25px auto;
-  background-color: #2b3a67;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-#submitBtn:hover {
-  background-color: #3b4d91;
-}
-
-/* ====== SUCCESS MESSAGE ====== */
-#message {
-  text-align: center;
-  font-weight: 500;
-  margin-top: 10px;
-}
-
-/* ====== SMALL SCREEN RESPONSIVE ====== */
-@media (max-width: 768px) {
-  main {
-    padding: 20px;
-  }
-
-  table {
-    font-size: 13px;
-  }
-
-  input, select {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-
-  #submitBtn {
-    width: 100%;
-  }
-}
-
-.table-actions {
-  text-align: right;
-  margin: 12px 0;
-}
-
-#addRowBtn {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  font-size: 22px;
-  font-weight: bold;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.2s;
-  display: inline-block;   
-}
-
-#addRowBtn:hover {
-  background-color: #218838;
+  overflow: visible;
 }
