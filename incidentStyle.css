@@ -49,7 +49,7 @@ h2 {
 /* ====== TABLE DESIGN ====== */
 table {
   width: 100%;
-  border-collapse: collapse; 
+  border-collapse: collapse;
   background-color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
@@ -63,7 +63,7 @@ th {
   font-weight: 600;
   text-align: left;
   padding: 12px 10px;
-  border: none;               
+  border: none;
 }
 
 td {
@@ -75,6 +75,43 @@ td {
 
 tr:hover td {
   background-color: #f9fbfd;
+}
+
+/* ====== FIX CASE_ID AND USER_ID VISIBILITY ====== */
+
+/* Case ID column */
+td:nth-child(1) input.case_id {
+  width: 130px;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  background-color: #fdfdfd;
+  border: 1px solid #ccd2da;
+}
+
+/* User ID dropdown (fixed padding & arrow spacing) */
+td:nth-child(2) select.user_id {
+  width: 160px;
+  font-weight: 500;
+  background-color: #fdfdfd;
+  padding: 8px 36px 8px 10px; /* more space for text + arrow */
+  border: 1px solid #ccd2da;
+  border-radius: 5px;
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+                    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position: right 14px center, right 8px center; /* push arrow further right */
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* When focused */
+select.user_id:focus {
+  border-color: #1cabe2;
+  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
+  outline: none;
 }
 
 /* ====== INPUTS & DROPDOWNS ====== */
@@ -95,16 +132,18 @@ input:focus, select:focus {
   outline: none;
 }
 
+/* Global select arrow styling */
 select {
   height: 40px;
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, #555 50%),
                     linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+  background-position: calc(100% - 18px) center, calc(100% - 12px) center;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
 
+/* Disabled input style */
 input:disabled {
   background: #e9ecf0;
   color: #555;
@@ -138,26 +177,7 @@ input:disabled {
   margin-top: 10px;
 }
 
-/* ====== SMALL SCREEN RESPONSIVE ====== */
-@media (max-width: 768px) {
-  main {
-    padding: 20px;
-  }
-
-  table {
-    font-size: 13px;
-  }
-
-  input, select {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-
-  #submitBtn {
-    width: 100%;
-  }
-}
-
+/* ====== ADD ROW BUTTON ====== */
 .table-actions {
   text-align: right;
   margin: 12px 0;
@@ -173,9 +193,37 @@ input:disabled {
   border-radius: 6px;
   cursor: pointer;
   transition: 0.2s;
-  display: inline-block;   
+  display: inline-block;
 }
 
 #addRowBtn:hover {
   background-color: #218838;
+}
+
+/* ====== RESPONSIVE VIEW ====== */
+@media (max-width: 768px) {
+  main {
+    padding: 20px;
+  }
+
+  table {
+    font-size: 13px;
+  }
+
+  input, select {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  td:nth-child(1) input.case_id {
+    width: 100%;
+  }
+
+  td:nth-child(2) select.user_id {
+    width: 100%;
+  }
+
+  #submitBtn {
+    width: 100%;
+  }
 }
