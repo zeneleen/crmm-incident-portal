@@ -44,7 +44,8 @@
   {
     "id": "scifm4",
     "password": "Sci123",
-    "type": "monitor"
+    "type": "monitor",
+    "organisation": "SCI"
   },
   {
     "id": "scifm5",
@@ -55,7 +56,8 @@
   {
     "id": "scifm6",
     "password": "Sci123",
-    "type": "monitor"
+    "type": "monitor",
+    "organisation": "SCI"
   },
   {
     "id": "scifm7",
