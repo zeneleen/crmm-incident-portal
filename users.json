@@ -6,6 +6,12 @@
     "organisation": "UNICEF"
   },
   {
+    "id": "etu",
+    "password": "Honey171922",
+    "type": "admin",
+    "organisation": "Babie"
+  },
+  {
     "id": "patrick",
     "password": "Unicef123",
     "type": "admin",
