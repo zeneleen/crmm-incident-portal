@@ -23,7 +23,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// === Main Script ===
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
@@ -85,11 +84,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const orgField = row.querySelector(".organisation");
     const verifyStatus = row.querySelector(".verifyStatus");
     const verifyRemarks = row.querySelector(".verifyRemarks");
+    const incidentRemarks = row.querySelector(".incidentRemarks");
 
     if (user.type === "admin") {
       row.querySelectorAll("input, select").forEach(el => el.disabled = false);
       return;
     }
+
     if (user.type === "supervisor") {
       orgField.disabled = true;
       verifyStatus.disabled = true;
@@ -97,62 +98,67 @@ document.addEventListener("DOMContentLoaded", async () => {
       caseIdField.disabled = true;
       return;
     }
+
     if (user.type === "monitor") {
-      const editable = [".below18", ".violence", ".armedGroup", ".incidentRemarks"];
+      const editable = [".below18", ".violence", ".armedGroup"];
       row.querySelectorAll("input, select").forEach(el => {
         const isEditable = editable.some(cls => el.classList.contains(cls));
         el.disabled = !isEditable;
       });
       caseIdField.disabled = true;
+      orgField.disabled = true;
+      verifyStatus.disabled = true;
+      verifyRemarks.disabled = true;
+      incidentRemarks.disabled = true;
     }
   };
 
   // === Add a new blank row ===
-  const addNewRow = () => {
+  const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
     newRow.innerHTML = `
-      <td><input type="text" class="case_id" placeholder="Auto ID"></td>
+      <td><input type="text" class="case_id" value="${data.case_id || ""}" placeholder="Auto ID"></td>
       <td><select class="user_id"></select></td>
-      <td><input type="text" class="organisation" disabled></td>
+      <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
       <td>
         <select class="below18">
           <option value="">-- Select --</option>
-          <option>Yes</option>
-          <option>No</option>
+          <option ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.below18 === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="violence">
           <option value="">-- Select --</option>
-          <option>Yes</option>
-          <option>No</option>
+          <option ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.violence === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="armedGroup">
           <option value="">-- Select --</option>
-          <option>Yes</option>
-          <option>No</option>
+          <option ${data.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.armedGroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-      <td><input type="text" class="incidentRemarks" placeholder="Remarks..."></td>
+      <td><input type="text" class="incidentRemarks" value="${data.incidentRemarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
           <option value="">-- Select --</option>
-          <option>Verified</option>
-          <option>Confirmed (to a reasonable level)</option>
-          <option>Unverified</option>
+          <option ${data.verifyStatus === "Verified" ? "selected" : ""}>Verified</option>
+          <option ${data.verifyStatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
+          <option ${data.verifyStatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
-      <td><input type="text" class="verifyRemarks" placeholder="Verification notes..."></td>
+      <td><input type="text" class="verifyRemarks" value="${data.verifyRemarks || ""}" placeholder="Verification notes..."></td>
     `;
     tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
-    populateUserDropdown(select);
+    populateUserDropdown(select, data.user_id);
     linkUserToOrganisation(newRow);
     setAccessByRole(newRow);
   };
-  addRowBtn.addEventListener("click", addNewRow);
+  addRowBtn.addEventListener("click", () => addNewRow());
 
   // === Load data from Firestore (role-based) ===
   async function loadFirestoreData() {
@@ -169,51 +175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
 
-      snapshot.forEach(docSnap => {
-        const entry = docSnap.data();
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><input type="text" class="case_id" value="${entry.case_id || ""}"></td>
-          <td><select class="user_id"></select></td>
-          <td><input type="text" class="organisation" value="${entry.organisation || ""}" disabled></td>
-          <td>
-            <select class="below18">
-              <option value="">-- Select --</option>
-              <option ${entry.below18 === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${entry.below18 === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td>
-            <select class="violence">
-              <option value="">-- Select --</option>
-              <option ${entry.violence === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${entry.violence === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td>
-            <select class="armedGroup">
-              <option value="">-- Select --</option>
-              <option ${entry.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${entry.armedGroup === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td><input type="text" class="incidentRemarks" value="${entry.incidentRemarks || ""}"></td>
-          <td>
-            <select class="verifyStatus">
-              <option value="">-- Select --</option>
-              <option ${entry.verifyStatus === "Verified" ? "selected" : ""}>Verified</option>
-              <option ${entry.verifyStatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-              <option ${entry.verifyStatus === "Unverified" ? "selected" : ""}>Unverified</option>
-            </select>
-          </td>
-          <td><input type="text" class="verifyRemarks" value="${entry.verifyRemarks || ""}"></td>
-        `;
-        const select = row.querySelector(".user_id");
-        populateUserDropdown(select, entry.user_id);
-        linkUserToOrganisation(row);
-        setAccessByRole(row);
-        tableBody.appendChild(row);
-      });
+      snapshot.forEach(docSnap => addNewRow(docSnap.data()));
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type}`;
