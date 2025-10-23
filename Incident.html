@@ -44,20 +44,13 @@
     </form>
   </main>
 
-  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      query,
-      where,
-      setDoc,
-      doc
+      getFirestore, collection, getDocs, query, where, setDoc, doc
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // ✅ Firebase Configuration
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
       authDomain: "crmm-cxb.firebaseapp.com",
@@ -70,9 +63,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // === Main Script ===
     document.addEventListener("DOMContentLoaded", async () => {
-      const user = JSON.parse(localStorage.getItem("loggedInUser")) || { id: "admin", type: "admin", organisation: "UNICEF" };
+      const user = JSON.parse(localStorage.getItem("loggedInUser"));
+      if (!user) {
+        alert("Please login first.");
+        window.location.href = "index.html";
+        return;
+      }
+
       document.getElementById("userInfo").textContent =
         `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
@@ -81,12 +79,14 @@
       const addRowBtn = document.getElementById("addRowBtn");
       const message = document.getElementById("message");
 
+      // === Only admin can add new rows ===
       addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
       // === Populate user dropdown ===
       const populateUserDropdown = (select, preselectedUserId = "") => {
         select.innerHTML = "";
         let availableUsers = users;
+
         if (user.type === "supervisor")
           availableUsers = users.filter(u => u.organisation === user.organisation);
         else if (user.type === "monitor")
@@ -98,6 +98,7 @@
           opt.textContent = u.id;
           select.appendChild(opt);
         });
+
         if (preselectedUserId) select.value = preselectedUserId;
         else if (user.type === "monitor") select.value = user.id;
       };
@@ -114,32 +115,40 @@
         updateOrg();
       };
 
-      // === Access control based on user role ===
+      // === Role-based access control ===
       const setAccessByRole = (row) => {
         const caseIdField = row.querySelector(".case_id");
         const orgField = row.querySelector(".organisation");
         const verifyStatus = row.querySelector(".verifyStatus");
         const verifyRemarks = row.querySelector(".verifyRemarks");
+        const incidentRemarks = row.querySelector(".incidentRemarks");
 
-        if (user.type === "admin") return;
+        if (user.type === "admin") {
+          row.querySelectorAll("input, select").forEach(el => el.disabled = false);
+          return;
+        }
+
         if (user.type === "supervisor") {
+          caseIdField.disabled = true;
           orgField.disabled = true;
           verifyStatus.disabled = true;
           verifyRemarks.disabled = true;
-          caseIdField.disabled = true;
           return;
         }
+
         if (user.type === "monitor") {
-          const editable = [".below18", ".violence", ".armedGroup", ".incidentRemarks"];
-          row.querySelectorAll("input, select").forEach(el => {
-            const isEditable = editable.some(cls => el.classList.contains(cls));
-            el.disabled = !isEditable;
-          });
-          caseIdField.disabled = true;
+          // disable everything first
+          row.querySelectorAll("input, select").forEach(el => el.disabled = true);
+
+          // explicitly enable only 4 fields for monitor
+          row.querySelector(".below18").disabled = false;
+          row.querySelector(".violence").disabled = false;
+          row.querySelector(".armedGroup").disabled = false;
+          row.querySelector(".incidentRemarks").disabled = false;
         }
       };
 
-      // === Add new table row ===
+      // === Add new row ===
       const addRow = (data = {}) => {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -179,6 +188,7 @@
           <td><input type="text" class="verifyRemarks" value="${data.verifyRemarks || ""}"></td>
         `;
         tableBody.appendChild(row);
+
         const select = row.querySelector(".user_id");
         populateUserDropdown(select, data.user_id);
         linkUserToOrganisation(row);
@@ -187,16 +197,15 @@
 
       addRowBtn.addEventListener("click", () => addRow());
 
-      // === Load data from Firestore (role-based) ===
+      // === Load data from Firestore ===
       try {
         let q;
-        if (user.type === "admin") {
+        if (user.type === "admin")
           q = collection(db, "incidents");
-        } else if (user.type === "supervisor") {
+        else if (user.type === "supervisor")
           q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
-        } else if (user.type === "monitor") {
+        else if (user.type === "monitor")
           q = query(collection(db, "incidents"), where("user_id", "==", user.id));
-        }
 
         const snapshot = await getDocs(q);
         tableBody.innerHTML = "";
@@ -210,9 +219,10 @@
         message.textContent = "⚠️ Could not load data from Firestore.";
       }
 
-      // === Submit and save to Firestore ===
+      // === Submit updates to Firestore ===
       document.getElementById("incidentForm").addEventListener("submit", async (e) => {
         e.preventDefault();
+
         const incidents = [];
         document.querySelectorAll("#incidentBody tr").forEach(row => {
           incidents.push({
