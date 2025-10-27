@@ -109,22 +109,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // === Normalize Firestore Data (Flat or Nested) ===
+  // === Fix: Normalize Firestore Data ===
   function normalizeFirestoreData(docData) {
     if (!docData) return {};
+    let clean = {};
+
+    // If REST upload (fields.stringValue)
     if (docData.fields) {
-      // data from REST API / Apps Script
-      const clean = {};
       Object.entries(docData.fields).forEach(([k, v]) => {
-        clean[k] = v.stringValue || "";
+        clean[k.toLowerCase()] = v.stringValue || "";
       });
-      return clean;
+    } else {
+      // Standard Firestore SDK object
+      Object.entries(docData).forEach(([k, v]) => {
+        clean[k.toLowerCase()] = v || "";
+      });
     }
-    // data from Firestore SDK (flat structure)
-    return docData;
+
+    return clean;
   }
 
-  // === Add a table row ===
+  // === Add Row Function ===
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
     newRow.innerHTML = `
@@ -148,20 +153,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td>
         <select class="armedGroup">
           <option value="">-- Select --</option>
-          <option ${data.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.armedGroup === "No" ? "selected" : ""}>No</option>
+          <option ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-      <td><input type="text" class="incidentRemarks" value="${data.incidentRemarks || ""}" placeholder="Remarks..."></td>
+      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
           <option value="">-- Select --</option>
-          <option ${data.verifyStatus === "Verified" ? "selected" : ""}>Verified</option>
-          <option ${data.verifyStatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-          <option ${data.verifyStatus === "Unverified" ? "selected" : ""}>Unverified</option>
+          <option ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
+          <option ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
+          <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
-      <td><input type="text" class="verifyRemarks" value="${data.verifyRemarks || ""}" placeholder="Verification notes..."></td>
+      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
     tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
@@ -170,9 +175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setAccessByRole(newRow);
   };
 
-  addRowBtn.addEventListener("click", () => addNewRow());
-
-  // === Load data from Firestore ===
+  // === Load Firestore Data ===
   async function loadFirestoreData() {
     try {
       let q;
@@ -203,7 +206,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadFirestoreData();
 
-  // === Save data to Firestore ===
+  // === Save Updates to Firestore ===
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
