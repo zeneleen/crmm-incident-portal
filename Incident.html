@@ -4,6 +4,28 @@
   <meta charset="UTF-8">
   <title>Incident Status | CRMM Portal</title>
   <link rel="stylesheet" href="incidentStyle.css">
+  <style>
+    /* 👇 Fix for case_id and user_id visibility */
+    #incidentTable {
+      table-layout: auto; /* allow dynamic width */
+      width: 100%;
+    }
+    td:nth-child(1),
+    th:nth-child(1),
+    td:nth-child(2),
+    th:nth-child(2) {
+      min-width: 180px !important;
+      white-space: nowrap;
+      overflow: visible;
+    }
+    td:nth-child(1) input,
+    td:nth-child(2) select {
+      font-family: monospace;
+      font-size: 14px;
+      width: 100%;
+      overflow-wrap: anywhere;
+    }
+  </style>
 </head>
 
 <body>
@@ -152,7 +174,7 @@
       const addRow = (data = {}) => {
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><input type="text" class="case_id" value="${data.case_id || ""}"></td>
+          <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
           <td><select class="user_id"></select></td>
           <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
           <td>
