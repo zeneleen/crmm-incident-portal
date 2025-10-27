@@ -59,14 +59,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       opt.textContent = u.id;
       select.appendChild(opt);
     });
-    if (preselectedUserId) {
-      select.value = preselectedUserId;
-    } else if (user.type === "monitor") {
-      select.value = user.id;
-    }
+    if (preselectedUserId) select.value = preselectedUserId;
+    else if (user.type === "monitor") select.value = user.id;
   };
 
-  // === Auto-update organisation field ===
+  // === Auto-update organisation ===
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
@@ -78,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateOrg();
   };
 
-  // === Access control by role ===
+  // === Role-based access ===
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
     const orgField = row.querySelector(".organisation");
@@ -112,20 +109,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // === Fix: Unwrap Firestore 'fields' data ===
+  // === Normalize Firestore Data (Flat or Nested) ===
   function normalizeFirestoreData(docData) {
-    // If Firestore fields object exists, unwrap all stringValues
+    if (!docData) return {};
     if (docData.fields) {
-      const normalized = {};
-      for (const [key, val] of Object.entries(docData.fields)) {
-        normalized[key] = val.stringValue || "";
-      }
-      return normalized;
+      // data from REST API / Apps Script
+      const clean = {};
+      Object.entries(docData.fields).forEach(([k, v]) => {
+        clean[k] = v.stringValue || "";
+      });
+      return clean;
     }
+    // data from Firestore SDK (flat structure)
     return docData;
   }
 
-  // === Add a new row ===
+  // === Add a table row ===
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
     newRow.innerHTML = `
@@ -204,7 +203,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadFirestoreData();
 
-  // === Submit and save data to Firestore ===
+  // === Save data to Firestore ===
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
