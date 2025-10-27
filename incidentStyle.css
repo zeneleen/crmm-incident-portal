@@ -57,10 +57,11 @@ table {
   border-radius: 10px;
   overflow: hidden;
   display: block;
-  max-height: 70vh; /* Scroll height */
+  max-height: 70vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #ccd2da #f5f6f8;
+  table-layout: auto; /* ✅ Let content decide width */
 }
 
 /* ====== FIXED HEADER ====== */
@@ -96,15 +97,21 @@ tr:hover td {
 
 /* ====== COLUMN WIDTHS ====== */
 td:nth-child(1),
-th:nth-child(1) {
-  width: 120px;
-  text-align: center;
-}
-
+th:nth-child(1),
 td:nth-child(2),
 th:nth-child(2) {
-  width: 160px;
+  min-width: 180px;              /* ✅ More width for IDs */
   text-align: center;
+  white-space: nowrap;           /* Keep ID on one line */
+  overflow: visible;             /* Prevent cutting */
+}
+
+td:nth-child(1) input,
+td:nth-child(2) select {
+  font-family: monospace;        /* ✅ Easier ID reading */
+  font-size: 14px;
+  width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* ====== INPUTS & DROPDOWNS ====== */
@@ -137,7 +144,7 @@ select {
 }
 
 select.user_id {
-  padding-right: 36px; /* prevent arrow overlap */
+  padding-right: 36px;
   background-position: right 14px center, right 8px center;
 }
 
