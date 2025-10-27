@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (user.type === "monitor") {
-      const editable = [".below18", ".violence", ".armedGroup"];
+      const editable = [".below18", ".violence", ".armedGroup", ".incidentRemarks"];
       row.querySelectorAll("input, select").forEach(el => {
         const isEditable = editable.some(cls => el.classList.contains(cls));
         el.disabled = !isEditable;
@@ -109,11 +109,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       orgField.disabled = true;
       verifyStatus.disabled = true;
       verifyRemarks.disabled = true;
-      incidentRemarks.disabled = true;
     }
   };
 
-  // === Add a new blank row ===
+  // === Fix: Unwrap Firestore 'fields' data ===
+  function normalizeFirestoreData(docData) {
+    // If Firestore fields object exists, unwrap all stringValues
+    if (docData.fields) {
+      const normalized = {};
+      for (const [key, val] of Object.entries(docData.fields)) {
+        normalized[key] = val.stringValue || "";
+      }
+      return normalized;
+    }
+    return docData;
+  }
+
+  // === Add a new row ===
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
     newRow.innerHTML = `
@@ -158,9 +170,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     linkUserToOrganisation(newRow);
     setAccessByRole(newRow);
   };
+
   addRowBtn.addEventListener("click", () => addNewRow());
 
-  // === Load data from Firestore (role-based) ===
+  // === Load data from Firestore ===
   async function loadFirestoreData() {
     try {
       let q;
@@ -175,7 +188,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
 
-      snapshot.forEach(docSnap => addNewRow(docSnap.data()));
+      snapshot.forEach(docSnap => {
+        const cleanData = normalizeFirestoreData(docSnap.data());
+        addNewRow(cleanData);
+      });
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type}`;
