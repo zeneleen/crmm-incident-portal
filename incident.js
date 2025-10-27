@@ -1,13 +1,3 @@
-/***************************************************
- * CRMM Incident Portal — Incident.js
- * -----------------------------------
- * Features:
- * - Loads Firestore data by user role (admin, supervisor, monitor)
- * - Displays and edits role-permitted fields
- * - Saves back to Firestore
- * - Fully compatible with lowercase Firestore keys
- ***************************************************/
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getFirestore,
@@ -19,7 +9,9 @@ import {
   doc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// ✅ Firebase Config
+// ==============================================
+// ✅ Firebase Configuration
+// ==============================================
 const firebaseConfig = {
   apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
   authDomain: "crmm-cxb.firebaseapp.com",
@@ -29,15 +21,13 @@ const firebaseConfig = {
   appId: "1:920459967885:web:402c2800ebe786ee5391c4"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ==============================================
+// ✅ Main Logic
+// ==============================================
 document.addEventListener("DOMContentLoaded", async () => {
-
-  /********************
-   * LOGIN VALIDATION *
-   ********************/
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
     alert("Please login first.");
@@ -52,18 +42,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
 
-  /********************
-   * LOAD USERS LIST  *
-   ********************/
+  // === Load users.json ===
   const response = await fetch("users.json");
   const users = await response.json();
 
-  // Only admin can add new rows
+  // === Show Add button only for admin ===
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
-  /********************
-   * POPULATE USER DROPDOWN
-   ********************/
+  // ==============================================
+  // ✅ Populate user dropdown
+  // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
@@ -85,23 +73,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     else if (user.type === "monitor") select.value = user.id;
   };
 
-  /********************
-   * AUTO-LINK USER → ORG
-   ********************/
+  // ==============================================
+  // ✅ Auto-update organisation when user changes
+  // ==============================================
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
+
     const updateOrg = () => {
       const selectedUser = users.find(u => u.id === userSelect.value);
       orgInput.value = selectedUser ? selectedUser.organisation : "";
     };
+
     userSelect.addEventListener("change", updateOrg);
     updateOrg();
   };
 
-  /********************
-   * ROLE-BASED ACCESS
-   ********************/
+  // ==============================================
+  // ✅ Role-based access control
+  // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
     const orgField = row.querySelector(".organisation");
@@ -135,31 +125,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  /********************
-   * NORMALIZE FIRESTORE DATA
-   * Handles lowercase & mixed case keys
-   ********************/
+  // ==============================================
+  // ✅ Firestore Normalization Fix
+  // ==============================================
   function normalizeFirestoreData(docData) {
     if (!docData) return {};
     const clean = {};
-    Object.entries(docData).forEach(([k, v]) => {
-      const key = k.toLowerCase();
-      if (typeof v === "object" && v.stringValue !== undefined) {
-        clean[key] = v.stringValue || "";
+
+    // Case 1: REST-style (fields.stringValue)
+    if (docData.fields) {
+      Object.entries(docData.fields).forEach(([key, val]) => {
+        clean[key.toLowerCase()] =
+          val.stringValue !== undefined ? val.stringValue : "";
+      });
+      return clean;
+    }
+
+    // Case 2: Firestore SDK style
+    Object.entries(docData).forEach(([key, val]) => {
+      if (val && typeof val === "object" && val.stringValue !== undefined) {
+        clean[key.toLowerCase()] = val.stringValue;
       } else {
-        clean[key] = v || "";
+        clean[key.toLowerCase()] = val ?? "";
       }
     });
+
     return clean;
   }
 
-  /********************
-   * ADD NEW ROW
-   ********************/
+  // ==============================================
+  // ✅ Add Table Row
+  // ==============================================
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
     newRow.innerHTML = `
-      <td><input type="text" class="case_id" value="${data.case_id || ""}" placeholder="Auto ID"></td>
+      <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
       <td><select class="user_id"></select></td>
       <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
       <td>
@@ -179,11 +179,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td>
         <select class="armedGroup">
           <option value="">-- Select --</option>
-          <option ${data.armedgroup === "Yes" || data.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.armedgroup === "No" || data.armedGroup === "No" ? "selected" : ""}>No</option>
+          <option ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || data.incidentRemarks || ""}" placeholder="Remarks..."></td>
+      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
           <option value="">-- Select --</option>
@@ -192,8 +192,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
-      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || data.verifyRemarks || ""}" placeholder="Verification notes..."></td>
+      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
+
     tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
     populateUserDropdown(select, data.user_id);
@@ -201,9 +202,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     setAccessByRole(newRow);
   };
 
-  /********************
-   * LOAD FIRESTORE DATA
-   ********************/
+  // ==============================================
+  // ✅ Load Firestore Data
+  // ==============================================
   async function loadFirestoreData() {
     try {
       let q;
@@ -224,9 +225,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       message.style.color = "green";
-      message.textContent = `✅ Data loaded for ${user.type}`;
+      message.textContent = `✅ Data loaded successfully (${snapshot.size} records).`;
     } catch (err) {
-      console.error("Firestore load failed:", err);
+      console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
       message.textContent = "⚠️ Could not load data from Firestore.";
     }
@@ -234,13 +235,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadFirestoreData();
 
-  /********************
-   * SAVE UPDATES TO FIRESTORE
-   ********************/
+  // ==============================================
+  // ✅ Save Updated Data
+  // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const incidents = [];
+
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
         case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
@@ -256,21 +257,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     try {
-      for (const incident of incidents) {
-        await setDoc(doc(db, "incidents", incident.case_id), incident);
+      for (const inc of incidents) {
+        await setDoc(doc(db, "incidents", inc.case_id), inc);
       }
       message.style.color = "green";
       message.textContent = "✅ Data successfully saved to Firestore.";
     } catch (err) {
-      console.error("Save error:", err);
+      console.error("❌ Save error:", err);
       message.style.color = "red";
       message.textContent = "❌ Failed to save data to Firestore.";
     }
   });
 
-  /********************
-   * LOGOUT FUNCTION
-   ********************/
+  // ==============================================
+  // ✅ Logout
+  // ==============================================
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem("loggedInUser");
     window.location.replace("index.html");
