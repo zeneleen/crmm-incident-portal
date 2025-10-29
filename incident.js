@@ -52,7 +52,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // DOM elements
   const tableBody = document.getElementById("incidentBody");
-  const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
   const filterContainer = document.getElementById("filterContainer");
   const orgFilterGroup = document.getElementById("orgFilterGroup");
@@ -64,9 +63,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load users.json
   const response = await fetch("users.json");
   const users = await response.json();
-
-  // Show add button only for admin
-  addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
   // ==============================================
   // ✅ Role-based Filter Setup
