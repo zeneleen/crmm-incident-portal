@@ -1,3 +1,35 @@
+// ==============================================
+// ✅ Firebase Setup
+// ==============================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+// ==============================================
+// ✅ Firebase Configuration
+// ==============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
+  authDomain: "crmm-cxb.firebaseapp.com",
+  projectId: "crmm-cxb",
+  storageBucket: "crmm-cxb.appspot.com",
+  messagingSenderId: "920459967885",
+  appId: "1:920459967885:web:402c2800ebe786ee5391c4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ==============================================
+// ✅ Main Logic
+// ==============================================
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
@@ -6,23 +38,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // Display logged-in user info
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
-
-  // Load users.json
-  const response = await fetch("users.json");
-  const users = await response.json();
 
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
 
+  // Disable form submission for non-admin users
+  if (user.type !== "admin") {
+    document.getElementById("incidentForm").querySelector("button[type='submit']").disabled = true;
+  }
+
+  // === Load users.json ===
+  const response = await fetch("users.json");
+  const users = await response.json();
+
+  // === Show Add button only for admin ===
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
-  // Populate dropdown
+  // ==============================================
+  // ✅ Populate user dropdown
+  // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
+
     if (user.type === "supervisor") {
       availableUsers = users.filter(u => u.organisation === user.organisation);
     } else if (user.type === "monitor") {
@@ -36,15 +78,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       select.appendChild(opt);
     });
 
-    // Select the prefilled user_id if given, else current user (for monitor)
-    if (preselectedUserId) {
-      select.value = preselectedUserId;
-    } else if (user.type === "monitor") {
-      select.value = user.id;
-    }
+    if (preselectedUserId) select.value = preselectedUserId;
+    else if (user.type === "monitor") select.value = user.id;
   };
 
-  // Link user_id → organisation auto-update
+  // ==============================================
+  // ✅ Auto-update organisation when user changes
+  // ==============================================
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
@@ -58,7 +98,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateOrg();
   };
 
-  // Access control
+  // ==============================================
+  // ✅ Role-based access control (field editing)
+  // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
     const orgField = row.querySelector(".organisation");
@@ -85,116 +127,167 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.disabled = !isEditable;
       });
       caseIdField.disabled = true;
+      orgField.disabled = true;
+      verifyStatus.disabled = true;
+      verifyRemarks.disabled = true;
     }
   };
 
-  // Add new row
-  const addNewRow = () => {
-    const newRow = tableBody.rows[0].cloneNode(true);
-    newRow.querySelectorAll("input, select").forEach(el => (el.value = ""));
-    tableBody.appendChild(newRow);
+  // ==============================================
+  // ✅ Normalize Firestore Data
+  // ==============================================
+  function normalizeFirestoreData(docData) {
+    if (!docData) return {};
+    const clean = {};
 
+    if (docData.fields) {
+      Object.entries(docData.fields).forEach(([key, val]) => {
+        clean[key.toLowerCase()] =
+          val.stringValue !== undefined ? val.stringValue : "";
+      });
+      return clean;
+    }
+
+    Object.entries(docData).forEach(([key, val]) => {
+      if (val && typeof val === "object" && val.stringValue !== undefined) {
+        clean[key.toLowerCase()] = val.stringValue;
+      } else {
+        clean[key.toLowerCase()] = val ?? "";
+      }
+    });
+
+    return clean;
+  }
+
+  // ==============================================
+  // ✅ Add Table Row
+  // ==============================================
+  const addNewRow = (data = {}) => {
+    const newRow = document.createElement("tr");
+    newRow.innerHTML = `
+      <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
+      <td><select class="user_id"></select></td>
+      <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
+      <td>
+        <select class="below18">
+          <option value="">-- Select --</option>
+          <option ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.below18 === "No" ? "selected" : ""}>No</option>
+        </select>
+      </td>
+      <td>
+        <select class="violence">
+          <option value="">-- Select --</option>
+          <option ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.violence === "No" ? "selected" : ""}>No</option>
+        </select>
+      </td>
+      <td>
+        <select class="armedGroup">
+          <option value="">-- Select --</option>
+          <option ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
+          <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
+        </select>
+      </td>
+      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
+      <td>
+        <select class="verifyStatus">
+          <option value="">-- Select --</option>
+          <option ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
+          <option ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
+          <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
+        </select>
+      </td>
+      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
+    `;
+
+    tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
-    populateUserDropdown(select);
+    populateUserDropdown(select, data.user_id);
     linkUserToOrganisation(newRow);
     setAccessByRole(newRow);
   };
-  addRowBtn.addEventListener("click", addNewRow);
 
-  // Load CSV and populate table
-  async function loadCSV() {
+  // ==============================================
+  // ✅ Load Firestore Data (strict role filter)
+  // ==============================================
+  async function loadFirestoreData() {
     try {
-      const res = await fetch("CaseID.csv");
-      if (!res.ok) throw new Error("Unable to load CSV");
-      const text = await res.text();
-      const parsed = Papa.parse(text, { header: true }).data;
+      const incidentsRef = collection(db, "incidents");
+      let q;
 
-      // Remove default blank row first
+      if (user.type === "admin") {
+        q = incidentsRef;
+      } else if (user.type === "supervisor") {
+        q = query(incidentsRef, where("organisation", "==", user.organisation));
+      } else if (user.type === "monitor") {
+        q = query(incidentsRef, where("user_id", "==", user.id));
+      }
+
+      const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
 
-      parsed.forEach(entry => {
-        const row = tableBody.insertRow();
+      snapshot.forEach(docSnap => {
+        const cleanData = normalizeFirestoreData(docSnap.data());
 
-        row.innerHTML = `
-          <td><input type="text" class="case_id" value="${entry.case_id || ""}"></td>
-          <td><select class="user_id"></select></td>
-          <td><input type="text" class="organisation" value="${entry.organisation || ""}" disabled></td>
-          <td>
-            <select class="below18">
-              <option value="">-- Select --</option>
-              <option ${entry.below18 === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${entry.below18 === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td>
-            <select class="violence">
-              <option value="">-- Select --</option>
-              <option ${entry.violence === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${entry.violence === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td>
-            <select class="armedGroup">
-              <option value="">-- Select --</option>
-              <option ${entry.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${entry.armedGroup === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td><input type="text" class="incidentRemarks" value="${entry.incidentRemarks || ""}"></td>
-          <td>
-            <select class="verifyStatus">
-              <option value="">-- Select --</option>
-              <option ${entry.verifyStatus === "Verified" ? "selected" : ""}>Verified</option>
-              <option ${entry.verifyStatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-              <option ${entry.verifyStatus === "Unverified" ? "selected" : ""}>Unverified</option>
-            </select>
-          </td>
-          <td><input type="text" class="verifyRemarks" value="${entry.verifyRemarks || ""}"></td>
-        `;
-
-        // ✅ Now populate dropdown *after* row is inserted
-        const userSelect = row.querySelector(".user_id");
-        populateUserDropdown(userSelect, entry.user_id);
-        linkUserToOrganisation(row);
-        setAccessByRole(row);
+        // 🔒 Double protection layer (in case of inconsistent data)
+        if (
+          user.type === "admin" ||
+          (user.type === "supervisor" && cleanData.organisation === user.organisation) ||
+          (user.type === "monitor" && cleanData.user_id === user.id)
+        ) {
+          addNewRow(cleanData);
+        }
       });
-    } catch (e) {
-      console.error("CSV load failed:", e);
+
+      message.style.color = "green";
+      message.textContent = `✅ Data loaded successfully (${snapshot.size} records).`;
+    } catch (err) {
+      console.error("⚠️ Firestore load failed:", err);
+      message.style.color = "red";
+      message.textContent = "⚠️ Could not load data from Firestore.";
     }
   }
-  await loadCSV();
 
-  // Submit: save CSV
-  document.getElementById("incidentForm").addEventListener("submit", (e) => {
+  await loadFirestoreData();
+
+  // ==============================================
+  // ✅ Save Updated Data (Admin only)
+  // ==============================================
+  document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const incidents = [];
+
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
-        case_id: row.querySelector(".case_id").value,
+        case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
         user_id: row.querySelector(".user_id").value,
         organisation: row.querySelector(".organisation").value,
         below18: row.querySelector(".below18").value,
         violence: row.querySelector(".violence").value,
-        armedGroup: row.querySelector(".armedGroup").value,
-        incidentRemarks: row.querySelector(".incidentRemarks").value,
-        verifyStatus: row.querySelector(".verifyStatus").value,
-        verifyRemarks: row.querySelector(".verifyRemarks").value
+        armedgroup: row.querySelector(".armedGroup").value,
+        incidentremarks: row.querySelector(".incidentRemarks").value,
+        verifystatus: row.querySelector(".verifyStatus").value,
+        verifyremarks: row.querySelector(".verifyRemarks").value
       });
     });
 
-    const csv = Papa.unparse(incidents);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "CaseID.csv";
-    link.click();
-
-    message.style.color = "green";
-    message.textContent = "Data saved successfully (CSV downloaded).";
+    try {
+      for (const inc of incidents) {
+        await setDoc(doc(db, "incidents", inc.case_id), inc);
+      }
+      message.style.color = "green";
+      message.textContent = "✅ Data successfully saved to Firestore.";
+    } catch (err) {
+      console.error("❌ Save error:", err);
+      message.style.color = "red";
+      message.textContent = "❌ Failed to save data to Firestore.";
+    }
   });
 
-  // Logout
+  // ==============================================
+  // ✅ Logout
+  // ==============================================
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem("loggedInUser");
     window.location.replace("index.html");
