@@ -7,7 +7,7 @@
   <style>
     /* 👇 Fix for case_id and user_id visibility */
     #incidentTable {
-      table-layout: auto; /* allow dynamic width */
+      table-layout: auto;
       width: 100%;
     }
     td:nth-child(1),
@@ -58,13 +58,13 @@
     <h2>Incident Status</h2>
 
     <!-- 🔍 Filter Section -->
-    <div class="filters">
-      <label for="filterUser">Filter by User:</label>
+    <div class="filters" id="filtersContainer">
+      <label for="filterUser" id="userFilterLabel">Filter by User:</label>
       <select id="filterUser">
         <option value="">All Users</option>
       </select>
 
-      <label for="filterOrg">Filter by Organisation:</label>
+      <label for="filterOrg" id="orgFilterLabel">Filter by Organisation:</label>
       <select id="filterOrg">
         <option value="">All Organisations</option>
       </select>
@@ -97,6 +97,62 @@
     </form>
   </main>
 
-  <script type="module" src="incident.js"></script>
+  <!-- ==========================================
+       JS: Dynamically hide filters by role
+       ========================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, query, where, setDoc, doc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
+      authDomain: "crmm-cxb.firebaseapp.com",
+      projectId: "crmm-cxb",
+      storageBucket: "crmm-cxb.appspot.com",
+      messagingSenderId: "920459967885",
+      appId: "1:920459967885:web:402c2800ebe786ee5391c4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const user = JSON.parse(localStorage.getItem("loggedInUser"));
+      if (!user) {
+        alert("Please login first.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      // Display logged user
+      document.getElementById("userInfo").textContent =
+        `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
+
+      // === Hide/Show filters based on role ===
+      const filterUser = document.getElementById("filterUser");
+      const filterOrg = document.getElementById("filterOrg");
+      const userFilterLabel = document.getElementById("userFilterLabel");
+      const orgFilterLabel = document.getElementById("orgFilterLabel");
+
+      if (user.type === "monitor") {
+        // Monitors see no filters
+        document.getElementById("filtersContainer").style.display = "none";
+      } else if (user.type === "supervisor") {
+        // Supervisors see only User filter (for their org)
+        filterOrg.style.display = "none";
+        orgFilterLabel.style.display = "none";
+      } 
+      // Admins see both filters (default)
+
+      // Load external JS logic after access setup
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "incident.js";
+      document.body.appendChild(script);
+    });
+  </script>
 </body>
 </html>
