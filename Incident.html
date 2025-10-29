@@ -25,6 +25,24 @@
       width: 100%;
       overflow-wrap: anywhere;
     }
+
+    /* 🔍 Filters layout */
+    .filters {
+      margin: 15px 0 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+    }
+    .filters label {
+      font-weight: 500;
+      color: #2b3a67;
+    }
+    .filters select {
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: 1px solid #cbd3da;
+    }
   </style>
 </head>
 
@@ -38,6 +56,19 @@
 
   <main>
     <h2>Incident Status</h2>
+
+    <!-- 🔍 Filter Section -->
+    <div class="filters">
+      <label for="filterUser">Filter by User:</label>
+      <select id="filterUser">
+        <option value="">All Users</option>
+      </select>
+
+      <label for="filterOrg">Filter by Organisation:</label>
+      <select id="filterOrg">
+        <option value="">All Organisations</option>
+      </select>
+    </div>
 
     <form id="incidentForm">
       <table id="incidentTable">
@@ -66,219 +97,6 @@
     </form>
   </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import {
-      getFirestore, collection, getDocs, query, where, setDoc, doc
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    // ✅ Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
-      authDomain: "crmm-cxb.firebaseapp.com",
-      projectId: "crmm-cxb",
-      storageBucket: "crmm-cxb.appspot.com",
-      messagingSenderId: "920459967885",
-      appId: "1:920459967885:web:402c2800ebe786ee5391c4"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      const user = JSON.parse(localStorage.getItem("loggedInUser"));
-      if (!user) {
-        alert("Please login first.");
-        window.location.href = "index.html";
-        return;
-      }
-
-      document.getElementById("userInfo").textContent =
-        `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
-
-      const users = await fetch("users.json").then(r => r.json());
-      const tableBody = document.getElementById("incidentBody");
-      const addRowBtn = document.getElementById("addRowBtn");
-      const message = document.getElementById("message");
-
-      // === Only admin can add new rows ===
-      addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
-
-      // === Populate user dropdown ===
-      const populateUserDropdown = (select, preselectedUserId = "") => {
-        select.innerHTML = "";
-        let availableUsers = users;
-
-        if (user.type === "supervisor")
-          availableUsers = users.filter(u => u.organisation === user.organisation);
-        else if (user.type === "monitor")
-          availableUsers = [user];
-
-        availableUsers.forEach(u => {
-          const opt = document.createElement("option");
-          opt.value = u.id;
-          opt.textContent = u.id;
-          select.appendChild(opt);
-        });
-
-        if (preselectedUserId) select.value = preselectedUserId;
-        else if (user.type === "monitor") select.value = user.id;
-      };
-
-      // === Link user_id to organisation ===
-      const linkUserToOrganisation = (row) => {
-        const userSelect = row.querySelector(".user_id");
-        const orgInput = row.querySelector(".organisation");
-        const updateOrg = () => {
-          const selectedUser = users.find(u => u.id === userSelect.value);
-          orgInput.value = selectedUser ? selectedUser.organisation : "";
-        };
-        userSelect.addEventListener("change", updateOrg);
-        updateOrg();
-      };
-
-      // === Role-based access control ===
-      const setAccessByRole = (row) => {
-        const caseIdField = row.querySelector(".case_id");
-        const orgField = row.querySelector(".organisation");
-        const verifyStatus = row.querySelector(".verifyStatus");
-        const verifyRemarks = row.querySelector(".verifyRemarks");
-        const incidentRemarks = row.querySelector(".incidentRemarks");
-
-        if (user.type === "admin") {
-          row.querySelectorAll("input, select").forEach(el => el.disabled = false);
-          return;
-        }
-
-        if (user.type === "supervisor") {
-          caseIdField.disabled = true;
-          orgField.disabled = true;
-          verifyStatus.disabled = true;
-          verifyRemarks.disabled = true;
-          return;
-        }
-
-        if (user.type === "monitor") {
-          // disable everything first
-          row.querySelectorAll("input, select").forEach(el => el.disabled = true);
-
-          // explicitly enable only 4 fields for monitor
-          row.querySelector(".below18").disabled = false;
-          row.querySelector(".violence").disabled = false;
-          row.querySelector(".armedGroup").disabled = false;
-          row.querySelector(".incidentRemarks").disabled = false;
-        }
-      };
-
-      // === Add new row ===
-      const addRow = (data = {}) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
-          <td><select class="user_id"></select></td>
-          <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
-          <td>
-            <select class="below18">
-              <option value="">-- Select --</option>
-              <option ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${data.below18 === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td>
-            <select class="violence">
-              <option value="">-- Select --</option>
-              <option ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${data.violence === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td>
-            <select class="armedGroup">
-              <option value="">-- Select --</option>
-              <option ${data.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
-              <option ${data.armedGroup === "No" ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td><input type="text" class="incidentRemarks" value="${data.incidentRemarks || ""}"></td>
-          <td>
-            <select class="verifyStatus">
-              <option value="">-- Select --</option>
-              <option ${data.verifyStatus === "Verified" ? "selected" : ""}>Verified</option>
-              <option ${data.verifyStatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-              <option ${data.verifyStatus === "Unverified" ? "selected" : ""}>Unverified</option>
-            </select>
-          </td>
-          <td><input type="text" class="verifyRemarks" value="${data.verifyRemarks || ""}"></td>
-        `;
-        tableBody.appendChild(row);
-
-        const select = row.querySelector(".user_id");
-        populateUserDropdown(select, data.user_id);
-        linkUserToOrganisation(row);
-        setAccessByRole(row);
-      };
-
-      addRowBtn.addEventListener("click", () => addRow());
-
-      // === Load data from Firestore ===
-      try {
-        let q;
-        if (user.type === "admin")
-          q = collection(db, "incidents");
-        else if (user.type === "supervisor")
-          q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
-        else if (user.type === "monitor")
-          q = query(collection(db, "incidents"), where("user_id", "==", user.id));
-
-        const snapshot = await getDocs(q);
-        tableBody.innerHTML = "";
-        snapshot.forEach(docSnap => addRow(docSnap.data()));
-
-        message.style.color = "green";
-        message.textContent = `✅ Data loaded for ${user.type}`;
-      } catch (err) {
-        console.error("Firestore load failed:", err);
-        message.style.color = "red";
-        message.textContent = "⚠️ Could not load data from Firestore.";
-      }
-
-      // === Submit updates to Firestore ===
-      document.getElementById("incidentForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const incidents = [];
-        document.querySelectorAll("#incidentBody tr").forEach(row => {
-          incidents.push({
-            case_id: row.querySelector(".case_id").value,
-            user_id: row.querySelector(".user_id").value,
-            organisation: row.querySelector(".organisation").value,
-            below18: row.querySelector(".below18").value,
-            violence: row.querySelector(".violence").value,
-            armedGroup: row.querySelector(".armedGroup").value,
-            incidentRemarks: row.querySelector(".incidentRemarks").value,
-            verifyStatus: row.querySelector(".verifyStatus").value,
-            verifyRemarks: row.querySelector(".verifyRemarks").value
-          });
-        });
-
-        try {
-          for (const incident of incidents) {
-            await setDoc(doc(db, "incidents", incident.case_id || `case_${Date.now()}`), incident);
-          }
-          message.style.color = "green";
-          message.textContent = "✅ Data successfully saved to Firestore.";
-        } catch (err) {
-          console.error("Save error:", err);
-          message.style.color = "red";
-          message.textContent = "⚠️ Failed to save data to Firestore.";
-        }
-      });
-
-      // === Logout ===
-      document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("loggedInUser");
-        window.location.replace("index.html");
-      });
-    });
-  </script>
+  <script type="module" src="incident.js"></script>
 </body>
 </html>
