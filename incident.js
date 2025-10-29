@@ -1,3 +1,11 @@
+/***************************************************
+ * CRMM Incident Portal | Role-based Filters
+ * -----------------------------------------------
+ * Admin → 2 filters: Organisation + User
+ * Supervisor → 1 filter: User (own org only)
+ * Monitor → No filters
+ ***************************************************/
+
 // ==============================================
 // ✅ Firebase Setup
 // ==============================================
@@ -28,7 +36,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==============================================
-// ✅ Main Logic
+// ✅ DOM Ready
 // ==============================================
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -42,14 +50,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
+  // DOM elements
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
-
-  // Disable submit button for non-admins
-  if (user.type !== "admin") {
-    document.getElementById("incidentForm").querySelector("button[type='submit']").disabled = true;
-  }
+  const filterContainer = document.getElementById("filterContainer");
+  const orgFilterGroup = document.getElementById("orgFilterGroup");
+  const userFilterGroup = document.getElementById("userFilterGroup");
+  const orgFilter = document.getElementById("organisationFilter");
+  const userFilter = document.getElementById("userFilter");
+  const applyFilterBtn = document.getElementById("applyFilterBtn");
 
   // Load users.json
   const response = await fetch("users.json");
@@ -59,7 +69,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
   // ==============================================
-  // ✅ Populate user dropdown
+  // ✅ Role-based Filter Setup
+  // ==============================================
+  if (user.type === "admin") {
+    filterContainer.style.display = "flex";
+    orgFilterGroup.style.display = "block";
+    userFilterGroup.style.display = "block";
+
+    // Populate organisation list
+    const orgs = [...new Set(users.map(u => u.organisation))];
+    orgs.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o;
+      opt.textContent = o;
+      orgFilter.appendChild(opt);
+    });
+
+    // Populate all users
+    users.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = u.id;
+      userFilter.appendChild(opt);
+    });
+
+  } else if (user.type === "supervisor") {
+    filterContainer.style.display = "flex";
+    userFilterGroup.style.display = "block";
+
+    // Only users from same organisation
+    const sameOrgUsers = users.filter(u => u.organisation === user.organisation);
+    sameOrgUsers.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = u.id;
+      userFilter.appendChild(opt);
+    });
+  }
+
+  // ==============================================
+  // ✅ Populate user dropdown in table
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
@@ -83,23 +132,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Auto-update organisation when user changes
+  // ✅ Auto-link Organisation to User
   // ==============================================
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
-
     const updateOrg = () => {
       const selectedUser = users.find(u => u.id === userSelect.value);
       orgInput.value = selectedUser ? selectedUser.organisation : "";
     };
-
     userSelect.addEventListener("change", updateOrg);
     updateOrg();
   };
 
   // ==============================================
-  // ✅ Role-based field access
+  // ✅ Role-based Access Control
   // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
@@ -113,10 +160,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (user.type === "supervisor") {
+      caseIdField.disabled = true;
       orgField.disabled = true;
       verifyStatus.disabled = true;
       verifyRemarks.disabled = true;
-      caseIdField.disabled = true;
       return;
     }
 
@@ -132,29 +179,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       verifyRemarks.disabled = true;
     }
   };
-
-  // ==============================================
-  // ✅ Normalize Firestore Data
-  // ==============================================
-  function normalizeFirestoreData(docData) {
-    if (!docData) return {};
-    const clean = {};
-    if (docData.fields) {
-      Object.entries(docData.fields).forEach(([key, val]) => {
-        clean[key.toLowerCase()] =
-          val.stringValue !== undefined ? val.stringValue : "";
-      });
-      return clean;
-    }
-    Object.entries(docData).forEach(([key, val]) => {
-      if (val && typeof val === "object" && val.stringValue !== undefined) {
-        clean[key.toLowerCase()] = val.stringValue;
-      } else {
-        clean[key.toLowerCase()] = val ?? "";
-      }
-    });
-    return clean;
-  }
 
   // ==============================================
   // ✅ Add Table Row
@@ -198,14 +222,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
     tableBody.appendChild(newRow);
-    const select = newRow.querySelector(".user_id");
-    populateUserDropdown(select, data.user_id);
+    populateUserDropdown(newRow.querySelector(".user_id"), data.user_id);
     linkUserToOrganisation(newRow);
     setAccessByRole(newRow);
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (strict enforcement)
+  // ✅ Load Firestore Data (with Filter Support)
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -224,19 +247,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       tableBody.innerHTML = "";
 
       snapshot.forEach(docSnap => {
-        const cleanData = normalizeFirestoreData(docSnap.data());
-        const dataOrg = (cleanData.organisation || "").trim().toLowerCase();
-        const userOrg = (user.organisation || "").trim().toLowerCase();
-        const dataUser = (cleanData.user_id || "").trim().toLowerCase();
-        const loggedUser = (user.id || "").trim().toLowerCase();
+        const data = docSnap.data();
 
-        if (
-          user.type === "admin" ||
-          (user.type === "supervisor" && dataOrg === userOrg) ||
-          (user.type === "monitor" && dataUser === loggedUser)
-        ) {
-          addNewRow(cleanData);
+        // Apply filter logic (client-side)
+        const orgSelected = orgFilter.value;
+        const userSelected = userFilter.value;
+
+        if (user.type === "admin") {
+          if (
+            (orgSelected && data.organisation !== orgSelected) ||
+            (userSelected && data.user_id !== userSelected)
+          ) return;
+        } else if (user.type === "supervisor") {
+          if (userSelected && data.user_id !== userSelected) return;
         }
+
+        addNewRow(data);
       });
 
       message.style.color = "green";
@@ -250,11 +276,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadFirestoreData();
 
+  // Apply filter button
+  applyFilterBtn?.addEventListener("click", async () => {
+    await loadFirestoreData();
+  });
+
   // ==============================================
-  // ✅ Save Data (admin only)
+  // ✅ Save Data (Admin only)
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (user.type !== "admin") return;
+
     const incidents = [];
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
@@ -269,6 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         verifyremarks: row.querySelector(".verifyRemarks").value
       });
     });
+
     try {
       for (const inc of incidents) {
         await setDoc(doc(db, "incidents", inc.case_id), inc);
