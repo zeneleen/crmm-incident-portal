@@ -43,7 +43,7 @@ header button:hover {
 }
 
 /* ==========================================================
-   MAIN CONTAINER
+   MAIN CONTENT
    ========================================================== */
 main {
   padding: 40px 60px;
@@ -57,7 +57,7 @@ h2 {
 }
 
 /* ==========================================================
-   FILTER SECTION
+   FILTERS
    ========================================================== */
 .filters {
   margin-bottom: 20px;
@@ -88,6 +88,11 @@ h2 {
   outline: none;
 }
 
+/* When filters are hidden (for monitor role) */
+#filtersContainer[style*="display: none"] {
+  margin-bottom: 0 !important;
+}
+
 /* ==========================================================
    TABLE LAYOUT
    ========================================================== */
@@ -106,7 +111,7 @@ table {
   scrollbar-color: #ccd2da #f5f6f8;
 }
 
-/* Sticky header */
+/* Sticky table header */
 thead {
   position: sticky;
   top: 0;
@@ -139,7 +144,7 @@ tr:hover td {
   transition: background-color 0.2s ease-in-out;
 }
 
-/* Case ID and User ID columns — wider */
+/* Wider for case_id & user_id columns */
 td:nth-child(1),
 th:nth-child(1),
 td:nth-child(2),
@@ -161,7 +166,8 @@ td:nth-child(2) select {
 /* ==========================================================
    INPUTS & SELECTS
    ========================================================== */
-input, select {
+input,
+select {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid #cbd3da;
@@ -172,13 +178,15 @@ input, select {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   border-color: #1cabe2;
   box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
   outline: none;
 }
 
-input:disabled {
+input:disabled,
+select:disabled {
   background: #e9ecf0;
   color: #555;
   cursor: not-allowed;
@@ -252,7 +260,8 @@ input:disabled {
     max-height: 60vh;
   }
 
-  input, select {
+  input,
+  select {
     font-size: 13px;
     padding: 7px 8px;
   }
