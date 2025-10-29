@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Display logged-in user info
+  // Display user info
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
@@ -46,16 +46,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
 
-  // Disable form submission for non-admin users
+  // Disable submit button for non-admins
   if (user.type !== "admin") {
     document.getElementById("incidentForm").querySelector("button[type='submit']").disabled = true;
   }
 
-  // === Load users.json ===
+  // Load users.json
   const response = await fetch("users.json");
   const users = await response.json();
 
-  // === Show Add button only for admin ===
+  // Show add button only for admin
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
   // ==============================================
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Role-based access control (field editing)
+  // ✅ Role-based field access
   // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
@@ -139,7 +139,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   function normalizeFirestoreData(docData) {
     if (!docData) return {};
     const clean = {};
-
     if (docData.fields) {
       Object.entries(docData.fields).forEach(([key, val]) => {
         clean[key.toLowerCase()] =
@@ -147,7 +146,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
       return clean;
     }
-
     Object.entries(docData).forEach(([key, val]) => {
       if (val && typeof val === "object" && val.stringValue !== undefined) {
         clean[key.toLowerCase()] = val.stringValue;
@@ -155,7 +153,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         clean[key.toLowerCase()] = val ?? "";
       }
     });
-
     return clean;
   }
 
@@ -200,7 +197,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       </td>
       <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
-
     tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
     populateUserDropdown(select, data.user_id);
@@ -209,7 +205,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (strict role filter)
+  // ✅ Load Firestore Data (strict enforcement)
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -229,19 +225,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       snapshot.forEach(docSnap => {
         const cleanData = normalizeFirestoreData(docSnap.data());
+        const dataOrg = (cleanData.organisation || "").trim().toLowerCase();
+        const userOrg = (user.organisation || "").trim().toLowerCase();
+        const dataUser = (cleanData.user_id || "").trim().toLowerCase();
+        const loggedUser = (user.id || "").trim().toLowerCase();
 
-        // 🔒 Double protection layer (in case of inconsistent data)
         if (
           user.type === "admin" ||
-          (user.type === "supervisor" && cleanData.organisation === user.organisation) ||
-          (user.type === "monitor" && cleanData.user_id === user.id)
+          (user.type === "supervisor" && dataOrg === userOrg) ||
+          (user.type === "monitor" && dataUser === loggedUser)
         ) {
           addNewRow(cleanData);
         }
       });
 
       message.style.color = "green";
-      message.textContent = `✅ Data loaded successfully (${snapshot.size} records).`;
+      message.textContent = `✅ Data loaded for ${user.type}`;
     } catch (err) {
       console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
@@ -252,12 +251,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadFirestoreData();
 
   // ==============================================
-  // ✅ Save Updated Data (Admin only)
+  // ✅ Save Data (admin only)
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const incidents = [];
-
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
         case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
@@ -271,7 +269,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         verifyremarks: row.querySelector(".verifyRemarks").value
       });
     });
-
     try {
       for (const inc of incidents) {
         await setDoc(doc(db, "incidents", inc.case_id), inc);
