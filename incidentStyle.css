@@ -48,6 +48,56 @@ h2 {
   font-weight: 600;
 }
 
+/* ====== 🔹 FILTER BAR ====== */
+.filter-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  background: #ffffff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.filter-container label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b3a67;
+}
+
+.filter-container select {
+  padding: 8px 12px;
+  border: 1px solid #ccd2da;
+  border-radius: 6px;
+  background: #f9fafc;
+  min-width: 160px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-container select:focus {
+  border-color: #1cabe2;
+  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
+  outline: none;
+}
+
+#applyFilterBtn {
+  background: #2b3a67;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+#applyFilterBtn:hover {
+  background: #3b4d91;
+}
+
 /* ====== TABLE DESIGN ====== */
 table {
   border-collapse: collapse;
@@ -61,7 +111,7 @@ table {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #ccd2da #f5f6f8;
-  table-layout: auto; /* ✅ Let content decide width */
+  table-layout: auto;
 }
 
 /* ====== FIXED HEADER ====== */
@@ -100,15 +150,15 @@ td:nth-child(1),
 th:nth-child(1),
 td:nth-child(2),
 th:nth-child(2) {
-  min-width: 180px;              /* ✅ More width for IDs */
+  min-width: 180px;
   text-align: center;
-  white-space: nowrap;           /* Keep ID on one line */
-  overflow: visible;             /* Prevent cutting */
+  white-space: nowrap;
+  overflow: visible;
 }
 
 td:nth-child(1) input,
 td:nth-child(2) select {
-  font-family: monospace;        /* ✅ Easier ID reading */
+  font-family: monospace;
   font-size: 14px;
   width: 100%;
   overflow-wrap: anywhere;
@@ -222,6 +272,16 @@ input:disabled {
   }
 
   #submitBtn {
+    width: 100%;
+  }
+
+  .filter-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .filter-container select {
     width: 100%;
   }
 }
