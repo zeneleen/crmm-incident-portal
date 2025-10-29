@@ -2,9 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebas
 import {
   getFirestore,
   collection,
+  getDocs,
   query,
   where,
-  getDocs,
   setDoc,
   doc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -190,50 +190,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (STRICT visibility)
+  // ✅ Load Firestore Data (ABSOLUTELY STRICT)
   // ==============================================
   async function loadFirestoreData() {
     try {
-      let q;
-      const incidentsRef = collection(db, "incidents");
-
-      if (user.type === "admin") {
-        q = incidentsRef;
-      } else if (user.type === "supervisor") {
-        q = query(
-          incidentsRef,
-          where("organisation", "in", [
-            user.organisation,
-            user.organisation.toUpperCase(),
-            user.organisation.toLowerCase()
-          ])
-        );
-      } else if (user.type === "monitor") {
-        q = query(incidentsRef, where("user_id", "==", user.id));
-      }
-
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, "incidents"));
       tableBody.innerHTML = "";
       let visibleCount = 0;
 
       snapshot.forEach(docSnap => {
-        const cleanData = normalizeFirestoreData(docSnap.data());
-        if (!cleanData.user_id || !cleanData.organisation) return;
+        const rawData = docSnap.data();
+        const cleanData = normalizeFirestoreData(rawData);
 
-        // 🔒 Strict visibility check
-        if (
-          user.type === "supervisor" &&
-          cleanData.organisation.trim().toLowerCase() !== user.organisation.trim().toLowerCase()
-        )
-          return;
+        // Normalized organisation field (handles multiple key names)
+        const orgValue = rawData.organisation || rawData.Organization || rawData.organization || rawData.org || cleanData.organisation || "";
 
-        if (
-          user.type === "monitor" &&
-          cleanData.user_id.trim().toLowerCase() !== user.id.trim().toLowerCase()
-        )
-          return;
+        // 🚫 Skip if missing
+        if (!cleanData.user_id && !rawData.user_id) return;
 
-        addNewRow(cleanData);
+        // ✅ Apply strict visibility filters
+        if (user.type === "supervisor") {
+          if (!orgValue || orgValue.trim().toLowerCase() !== user.organisation.trim().toLowerCase()) return;
+        }
+
+        if (user.type === "monitor") {
+          const recordUser = (rawData.user_id || cleanData.user_id || "").trim().toLowerCase();
+          if (recordUser !== user.id.trim().toLowerCase()) return;
+        }
+
+        addNewRow({
+          ...cleanData,
+          organisation: orgValue
+        });
         visibleCount++;
       });
 
