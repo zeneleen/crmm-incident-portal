@@ -232,29 +232,6 @@ input:disabled {
   margin-top: 10px;
 }
 
-/* ====== ADD ROW BUTTON ====== */
-.table-actions {
-  text-align: right;
-  margin: 12px 0;
-}
-
-#addRowBtn {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  font-size: 22px;
-  font-weight: bold;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.2s;
-  display: inline-block;
-}
-
-#addRowBtn:hover {
-  background-color: #218838;
-}
-
 /* ====== SMALL SCREEN RESPONSIVE ====== */
 @media (max-width: 768px) {
   main {
