@@ -49,6 +49,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // === Show Add button only for admin ===
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
+  // === Disable submit for non-admin ===
+  if (user.type !== "admin") {
+    document.getElementById("incidentForm").querySelector("button[type='submit']").disabled = true;
+  }
+
   // ==============================================
   // ✅ Populate user dropdown
   // ==============================================
@@ -190,16 +195,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadFirestoreData() {
     try {
       let q;
+      const incidentsRef = collection(db, "incidents");
 
       if (user.type === "admin") {
-        // 🔹 Admin: sees everything
-        q = collection(db, "incidents");
+        q = incidentsRef;
       } else if (user.type === "supervisor") {
-        // 🔹 Supervisor: only records matching their organisation
-        q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
+        q = query(
+          incidentsRef,
+          where("organisation", "in", [
+            user.organisation,
+            user.organisation.toUpperCase(),
+            user.organisation.toLowerCase()
+          ])
+        );
       } else if (user.type === "monitor") {
-        // 🔹 Monitor: only their own records
-        q = query(collection(db, "incidents"), where("user_id", "==", user.id));
+        q = query(incidentsRef, where("user_id", "==", user.id));
       }
 
       const snapshot = await getDocs(q);
@@ -208,11 +218,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       snapshot.forEach(docSnap => {
         const cleanData = normalizeFirestoreData(docSnap.data());
-        if (!cleanData.user_id) return;
+        if (!cleanData.user_id || !cleanData.organisation) return;
 
-        // Double-check at display time
-        if (user.type === "supervisor" && cleanData.organisation !== user.organisation) return;
-        if (user.type === "monitor" && cleanData.user_id !== user.id) return;
+        // 🔒 Strict visibility check
+        if (
+          user.type === "supervisor" &&
+          cleanData.organisation.trim().toLowerCase() !== user.organisation.trim().toLowerCase()
+        )
+          return;
+
+        if (
+          user.type === "monitor" &&
+          cleanData.user_id.trim().toLowerCase() !== user.id.trim().toLowerCase()
+        )
+          return;
 
         addNewRow(cleanData);
         visibleCount++;
@@ -220,6 +239,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type} (${visibleCount} records visible).`;
+
+      if (visibleCount === 0) {
+        message.textContent += " No records found for your organisation.";
+      }
     } catch (err) {
       console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
