@@ -97,7 +97,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const orgField = row.querySelector(".organisation");
     const verifyStatus = row.querySelector(".verifyStatus");
     const verifyRemarks = row.querySelector(".verifyRemarks");
-    const incidentRemarks = row.querySelector(".incidentRemarks");
 
     if (user.type === "admin") {
       row.querySelectorAll("input, select").forEach(el => el.disabled = false);
@@ -126,23 +125,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Firestore Normalization Fix
+  // ✅ Normalize Firestore Data
   // ==============================================
   function normalizeFirestoreData(docData) {
     if (!docData) return {};
     const clean = {};
-
     if (docData.fields) {
       Object.entries(docData.fields).forEach(([key, val]) => {
         clean[key.toLowerCase()] = val.stringValue || "";
       });
       return clean;
     }
-
     Object.entries(docData).forEach(([key, val]) => {
       clean[key.toLowerCase()] = val?.stringValue ?? val ?? "";
     });
-
     return clean;
   }
 
@@ -187,7 +183,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       </td>
       <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
-
     tableBody.appendChild(newRow);
     const select = newRow.querySelector(".user_id");
     populateUserDropdown(select, data.user_id);
@@ -196,7 +191,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (Role-based restriction)
+  // ✅ Load Firestore Data (STRICT Role-based restriction)
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -207,28 +202,44 @@ document.addEventListener("DOMContentLoaded", async () => {
         q = collection(db, "incidents");
       }
 
-      // 🔹 Supervisor — can see all cases from their organisation
+      // 🔹 Supervisor — only see cases from their organisation (must have valid user_id)
       else if (user.type === "supervisor") {
-        q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
+        q = query(
+          collection(db, "incidents"),
+          where("organisation", "==", user.organisation)
+        );
       }
 
-      // 🔹 Monitor — can see only their own cases
+      // 🔹 Monitor — only see their own cases
       else if (user.type === "monitor") {
-        q = query(collection(db, "incidents"), where("user_id", "==", user.id));
+        q = query(
+          collection(db, "incidents"),
+          where("user_id", "==", user.id)
+        );
       }
 
-      // 🔹 Fetch and render data
       const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
+      let visibleCount = 0;
 
       snapshot.forEach(docSnap => {
         const cleanData = normalizeFirestoreData(docSnap.data());
+
+        // 🚫 Skip rows with blank or missing user_id
+        if (!cleanData.user_id || cleanData.user_id.trim() === "") return;
+
+        // ✅ Supervisor strict filter — skip if org mismatch
+        if (user.type === "supervisor" && cleanData.organisation !== user.organisation) return;
+
+        // ✅ Monitor strict filter — skip if user_id mismatch
+        if (user.type === "monitor" && cleanData.user_id !== user.id) return;
+
         addNewRow(cleanData);
+        visibleCount++;
       });
 
       message.style.color = "green";
-      message.textContent = `✅ Data loaded successfully (${snapshot.size} records).`;
-
+      message.textContent = `✅ Data loaded for ${user.type} (${visibleCount} records visible).`;
     } catch (err) {
       console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
