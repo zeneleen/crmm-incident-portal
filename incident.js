@@ -1,30 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  setDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-// ==============================================
-// ✅ Firebase Configuration
-// ==============================================
-const firebaseConfig = {
-  apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
-  authDomain: "crmm-cxb.firebaseapp.com",
-  projectId: "crmm-cxb",
-  storageBucket: "crmm-cxb.appspot.com",
-  messagingSenderId: "920459967885",
-  appId: "1:920459967885:web:402c2800ebe786ee5391c4"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// ==============================================
-// ✅ Main Logic
-// ==============================================
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
@@ -33,29 +6,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const tableBody = document.getElementById("incidentBody");
-  const addRowBtn = document.getElementById("addRowBtn");
-  const message = document.getElementById("message");
-  const submitBtn = document.getElementById("incidentForm").querySelector("button[type='submit']");
-
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
-  // === Load users.json ===
+  // Load users.json
   const response = await fetch("users.json");
   const users = await response.json();
 
-  // === UI privilege settings ===
-  addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
-  if (user.type !== "admin") submitBtn.disabled = true;
+  const tableBody = document.getElementById("incidentBody");
+  const addRowBtn = document.getElementById("addRowBtn");
+  const message = document.getElementById("message");
 
-  // ==============================================
-  // ✅ Populate user dropdown
-  // ==============================================
+  addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
+
+  // Populate dropdown
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
-
     if (user.type === "supervisor") {
       availableUsers = users.filter(u => u.organisation === user.organisation);
     } else if (user.type === "monitor") {
@@ -69,13 +36,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       select.appendChild(opt);
     });
 
-    if (preselectedUserId) select.value = preselectedUserId;
-    else if (user.type === "monitor") select.value = user.id;
+    // Select the prefilled user_id if given, else current user (for monitor)
+    if (preselectedUserId) {
+      select.value = preselectedUserId;
+    } else if (user.type === "monitor") {
+      select.value = user.id;
+    }
   };
 
-  // ==============================================
-  // ✅ Auto-update organisation from users.json
-  // ==============================================
+  // Link user_id → organisation auto-update
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
@@ -89,9 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateOrg();
   };
 
-  // ==============================================
-  // ✅ Field-level permissions
-  // ==============================================
+  // Access control
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
     const orgField = row.querySelector(".organisation");
@@ -118,160 +85,116 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.disabled = !isEditable;
       });
       caseIdField.disabled = true;
-      orgField.disabled = true;
-      verifyStatus.disabled = true;
-      verifyRemarks.disabled = true;
     }
   };
 
-  // ==============================================
-  // ✅ Normalize data keys
-  // ==============================================
-  function normalizeData(docData) {
-    const clean = {};
-    Object.entries(docData).forEach(([k, v]) => {
-      clean[k.toLowerCase()] = typeof v === "object" && v !== null ? v.stringValue || "" : v;
-    });
-    return clean;
-  }
-
-  // ==============================================
-  // ✅ Add table row
-  // ==============================================
-  const addNewRow = (data = {}) => {
-    const newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
-      <td><select class="user_id"></select></td>
-      <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
-      <td>
-        <select class="below18">
-          <option value="">-- Select --</option>
-          <option ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.below18 === "No" ? "selected" : ""}>No</option>
-        </select>
-      </td>
-      <td>
-        <select class="violence">
-          <option value="">-- Select --</option>
-          <option ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.violence === "No" ? "selected" : ""}>No</option>
-        </select>
-      </td>
-      <td>
-        <select class="armedGroup">
-          <option value="">-- Select --</option>
-          <option ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
-        </select>
-      </td>
-      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
-      <td>
-        <select class="verifyStatus">
-          <option value="">-- Select --</option>
-          <option ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
-          <option ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-          <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
-        </select>
-      </td>
-      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
-    `;
+  // Add new row
+  const addNewRow = () => {
+    const newRow = tableBody.rows[0].cloneNode(true);
+    newRow.querySelectorAll("input, select").forEach(el => (el.value = ""));
     tableBody.appendChild(newRow);
+
     const select = newRow.querySelector(".user_id");
-    populateUserDropdown(select, data.user_id);
+    populateUserDropdown(select);
     linkUserToOrganisation(newRow);
     setAccessByRole(newRow);
   };
+  addRowBtn.addEventListener("click", addNewRow);
 
-  // ==============================================
-  // ✅ Load Firestore Data (using users.json mapping)
-  // ==============================================
-  async function loadFirestoreData() {
+  // Load CSV and populate table
+  async function loadCSV() {
     try {
-      const snapshot = await getDocs(collection(db, "incidents"));
+      const res = await fetch("CaseID.csv");
+      if (!res.ok) throw new Error("Unable to load CSV");
+      const text = await res.text();
+      const parsed = Papa.parse(text, { header: true }).data;
+
+      // Remove default blank row first
       tableBody.innerHTML = "";
-      let visibleCount = 0;
 
-      snapshot.forEach(docSnap => {
-        const data = normalizeData(docSnap.data());
-        const recordUserId = (data.user_id || "").trim();
+      parsed.forEach(entry => {
+        const row = tableBody.insertRow();
 
-        if (!recordUserId) return; // skip invalid entries
+        row.innerHTML = `
+          <td><input type="text" class="case_id" value="${entry.case_id || ""}"></td>
+          <td><select class="user_id"></select></td>
+          <td><input type="text" class="organisation" value="${entry.organisation || ""}" disabled></td>
+          <td>
+            <select class="below18">
+              <option value="">-- Select --</option>
+              <option ${entry.below18 === "Yes" ? "selected" : ""}>Yes</option>
+              <option ${entry.below18 === "No" ? "selected" : ""}>No</option>
+            </select>
+          </td>
+          <td>
+            <select class="violence">
+              <option value="">-- Select --</option>
+              <option ${entry.violence === "Yes" ? "selected" : ""}>Yes</option>
+              <option ${entry.violence === "No" ? "selected" : ""}>No</option>
+            </select>
+          </td>
+          <td>
+            <select class="armedGroup">
+              <option value="">-- Select --</option>
+              <option ${entry.armedGroup === "Yes" ? "selected" : ""}>Yes</option>
+              <option ${entry.armedGroup === "No" ? "selected" : ""}>No</option>
+            </select>
+          </td>
+          <td><input type="text" class="incidentRemarks" value="${entry.incidentRemarks || ""}"></td>
+          <td>
+            <select class="verifyStatus">
+              <option value="">-- Select --</option>
+              <option ${entry.verifyStatus === "Verified" ? "selected" : ""}>Verified</option>
+              <option ${entry.verifyStatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
+              <option ${entry.verifyStatus === "Unverified" ? "selected" : ""}>Unverified</option>
+            </select>
+          </td>
+          <td><input type="text" class="verifyRemarks" value="${entry.verifyRemarks || ""}"></td>
+        `;
 
-        // Match user with users.json to get organisation
-        const matchedUser = users.find(u => u.id === recordUserId);
-        if (!matchedUser) return; // skip unknown users
-
-        const recordOrg = matchedUser.organisation;
-
-        // 🔒 Visibility control based on verified user info
-        if (user.type === "supervisor" && recordOrg !== user.organisation) return;
-        if (user.type === "monitor" && recordUserId !== user.id) return;
-
-        addNewRow({
-          ...data,
-          organisation: recordOrg
-        });
-
-        visibleCount++;
+        // ✅ Now populate dropdown *after* row is inserted
+        const userSelect = row.querySelector(".user_id");
+        populateUserDropdown(userSelect, entry.user_id);
+        linkUserToOrganisation(row);
+        setAccessByRole(row);
       });
-
-      message.style.color = "green";
-      message.textContent = `✅ Data loaded for ${user.type} (${visibleCount} records visible).`;
-
-      if (visibleCount === 0) {
-        message.textContent += " No records found for your organisation.";
-      }
-    } catch (err) {
-      console.error("⚠️ Firestore load failed:", err);
-      message.style.color = "red";
-      message.textContent = "⚠️ Could not load data from Firestore.";
+    } catch (e) {
+      console.error("CSV load failed:", e);
     }
   }
+  await loadCSV();
 
-  await loadFirestoreData();
-
-  // ==============================================
-  // ✅ Save Data (only admin)
-  // ==============================================
-  document.getElementById("incidentForm").addEventListener("submit", async (e) => {
+  // Submit: save CSV
+  document.getElementById("incidentForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    if (user.type !== "admin") {
-      alert("Only admin can save data.");
-      return;
-    }
 
     const incidents = [];
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
-        case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
+        case_id: row.querySelector(".case_id").value,
         user_id: row.querySelector(".user_id").value,
         organisation: row.querySelector(".organisation").value,
         below18: row.querySelector(".below18").value,
         violence: row.querySelector(".violence").value,
-        armedgroup: row.querySelector(".armedGroup").value,
-        incidentremarks: row.querySelector(".incidentRemarks").value,
-        verifystatus: row.querySelector(".verifyStatus").value,
-        verifyremarks: row.querySelector(".verifyRemarks").value
+        armedGroup: row.querySelector(".armedGroup").value,
+        incidentRemarks: row.querySelector(".incidentRemarks").value,
+        verifyStatus: row.querySelector(".verifyStatus").value,
+        verifyRemarks: row.querySelector(".verifyRemarks").value
       });
     });
 
-    try {
-      for (const inc of incidents) {
-        await setDoc(doc(db, "incidents", inc.case_id), inc);
-      }
-      message.style.color = "green";
-      message.textContent = "✅ Data successfully saved to Firestore.";
-    } catch (err) {
-      console.error("❌ Save error:", err);
-      message.style.color = "red";
-      message.textContent = "❌ Failed to save data to Firestore.";
-    }
+    const csv = Papa.unparse(incidents);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "CaseID.csv";
+    link.click();
+
+    message.style.color = "green";
+    message.textContent = "Data saved successfully (CSV downloaded).";
   });
 
-  // ==============================================
-  // ✅ Logout
-  // ==============================================
+  // Logout
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem("loggedInUser");
     window.location.replace("index.html");
