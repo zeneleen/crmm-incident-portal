@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Role-based access control
+  // ✅ Role-based field access
   // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
@@ -130,12 +130,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   function normalizeFirestoreData(docData) {
     if (!docData) return {};
     const clean = {};
-    if (docData.fields) {
-      Object.entries(docData.fields).forEach(([key, val]) => {
-        clean[key.toLowerCase()] = val.stringValue || "";
-      });
-      return clean;
-    }
     Object.entries(docData).forEach(([key, val]) => {
       clean[key.toLowerCase()] = val?.stringValue ?? val ?? "";
     });
@@ -191,31 +185,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (STRICT Role-based restriction)
+  // ✅ Load Firestore Data (STRICT visibility)
   // ==============================================
   async function loadFirestoreData() {
     try {
       let q;
 
-      // 🔹 Admin — can see all
       if (user.type === "admin") {
+        // 🔹 Admin: sees everything
         q = collection(db, "incidents");
-      }
-
-      // 🔹 Supervisor — only see cases from their organisation (must have valid user_id)
-      else if (user.type === "supervisor") {
-        q = query(
-          collection(db, "incidents"),
-          where("organisation", "==", user.organisation)
-        );
-      }
-
-      // 🔹 Monitor — only see their own cases
-      else if (user.type === "monitor") {
-        q = query(
-          collection(db, "incidents"),
-          where("user_id", "==", user.id)
-        );
+      } else if (user.type === "supervisor") {
+        // 🔹 Supervisor: only records matching their organisation
+        q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
+      } else if (user.type === "monitor") {
+        // 🔹 Monitor: only their own records
+        q = query(collection(db, "incidents"), where("user_id", "==", user.id));
       }
 
       const snapshot = await getDocs(q);
@@ -224,14 +208,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       snapshot.forEach(docSnap => {
         const cleanData = normalizeFirestoreData(docSnap.data());
+        if (!cleanData.user_id) return;
 
-        // 🚫 Skip rows with blank or missing user_id
-        if (!cleanData.user_id || cleanData.user_id.trim() === "") return;
-
-        // ✅ Supervisor strict filter — skip if org mismatch
+        // Double-check at display time
         if (user.type === "supervisor" && cleanData.organisation !== user.organisation) return;
-
-        // ✅ Monitor strict filter — skip if user_id mismatch
         if (user.type === "monitor" && cleanData.user_id !== user.id) return;
 
         addNewRow(cleanData);
