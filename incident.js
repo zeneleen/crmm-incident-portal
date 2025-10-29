@@ -3,8 +3,6 @@ import {
   getFirestore,
   collection,
   getDocs,
-  query,
-  where,
   setDoc,
   doc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -35,12 +33,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  document.getElementById("userInfo").textContent =
-    `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
-
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
+
+  document.getElementById("userInfo").textContent =
+    `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
   // === Load users.json ===
   const response = await fetch("users.json");
@@ -55,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ==============================================
-  // ✅ Populate user dropdown
+  // ✅ Dropdown population
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
@@ -79,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Auto-update organisation when user changes
+  // ✅ Link user to organisation
   // ==============================================
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
@@ -130,19 +128,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Normalize Firestore Data
+  // ✅ Normalize Data
   // ==============================================
-  function normalizeFirestoreData(docData) {
-    if (!docData) return {};
-    const clean = {};
-    Object.entries(docData).forEach(([key, val]) => {
-      clean[key.toLowerCase()] = val?.stringValue ?? val ?? "";
+  function normalizeData(docData) {
+    const lower = {};
+    Object.entries(docData).forEach(([k, v]) => {
+      lower[k.toLowerCase()] = typeof v === "object" && v !== null ? v.stringValue || "" : v;
     });
-    return clean;
+    return lower;
   }
 
   // ==============================================
-  // ✅ Add Table Row
+  // ✅ Add Row
   // ==============================================
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
@@ -190,7 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (ABSOLUTELY STRICT)
+  // ✅ Load Firestore Data — fully local filtering
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -199,38 +196,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       let visibleCount = 0;
 
       snapshot.forEach(docSnap => {
-        const rawData = docSnap.data();
-        const cleanData = normalizeFirestoreData(rawData);
+        const data = normalizeData(docSnap.data());
+        const org = (
+          data.organisation ||
+          data.organization ||
+          data.org ||
+          data.Organization ||
+          ""
+        ).trim().toLowerCase();
 
-        // Normalized organisation field (handles multiple key names)
-        const orgValue = rawData.organisation || rawData.Organization || rawData.organization || rawData.org || cleanData.organisation || "";
+        const userOrg = (user.organisation || "").trim().toLowerCase();
+        const recordUser = (data.user_id || "").trim().toLowerCase();
 
-        // 🚫 Skip if missing
-        if (!cleanData.user_id && !rawData.user_id) return;
-
-        // ✅ Apply strict visibility filters
-        if (user.type === "supervisor") {
-          if (!orgValue || orgValue.trim().toLowerCase() !== user.organisation.trim().toLowerCase()) return;
-        }
-
-        if (user.type === "monitor") {
-          const recordUser = (rawData.user_id || cleanData.user_id || "").trim().toLowerCase();
-          if (recordUser !== user.id.trim().toLowerCase()) return;
-        }
+        // Apply strict client-side filtering
+        if (user.type === "supervisor" && org !== userOrg) return;
+        if (user.type === "monitor" && recordUser !== user.id.trim().toLowerCase()) return;
 
         addNewRow({
-          ...cleanData,
-          organisation: orgValue
+          ...data,
+          organisation: org ? org.toUpperCase() : ""
         });
         visibleCount++;
       });
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type} (${visibleCount} records visible).`;
-
-      if (visibleCount === 0) {
-        message.textContent += " No records found for your organisation.";
-      }
+      if (visibleCount === 0) message.textContent += " No records found.";
     } catch (err) {
       console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
@@ -241,7 +232,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadFirestoreData();
 
   // ==============================================
-  // ✅ Save Updated Data
+  // ✅ Save Data
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
