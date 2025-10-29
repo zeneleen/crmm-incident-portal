@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
+  const submitBtn = document.getElementById("incidentForm").querySelector("button[type='submit']");
 
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
@@ -44,16 +45,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const response = await fetch("users.json");
   const users = await response.json();
 
-  // === Show Add button only for admin ===
+  // === UI privilege settings ===
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
-
-  // === Disable submit for non-admin ===
-  if (user.type !== "admin") {
-    document.getElementById("incidentForm").querySelector("button[type='submit']").disabled = true;
-  }
+  if (user.type !== "admin") submitBtn.disabled = true;
 
   // ==============================================
-  // ✅ Dropdown population
+  // ✅ Populate user dropdown
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
@@ -77,7 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Link user to organisation
+  // ✅ Auto-update organisation from users.json
   // ==============================================
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
@@ -93,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Role-based field access
+  // ✅ Field-level permissions
   // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
@@ -128,18 +125,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Normalize Data
+  // ✅ Normalize data keys
   // ==============================================
   function normalizeData(docData) {
-    const lower = {};
+    const clean = {};
     Object.entries(docData).forEach(([k, v]) => {
-      lower[k.toLowerCase()] = typeof v === "object" && v !== null ? v.stringValue || "" : v;
+      clean[k.toLowerCase()] = typeof v === "object" && v !== null ? v.stringValue || "" : v;
     });
-    return lower;
+    return clean;
   }
 
   // ==============================================
-  // ✅ Add Row
+  // ✅ Add table row
   // ==============================================
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
@@ -187,7 +184,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data — fully local filtering
+  // ✅ Load Firestore Data (using users.json mapping)
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -197,31 +194,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       snapshot.forEach(docSnap => {
         const data = normalizeData(docSnap.data());
-        const org = (
-          data.organisation ||
-          data.organization ||
-          data.org ||
-          data.Organization ||
-          ""
-        ).trim().toLowerCase();
+        const recordUserId = (data.user_id || "").trim();
 
-        const userOrg = (user.organisation || "").trim().toLowerCase();
-        const recordUser = (data.user_id || "").trim().toLowerCase();
+        if (!recordUserId) return; // skip invalid entries
 
-        // Apply strict client-side filtering
-        if (user.type === "supervisor" && org !== userOrg) return;
-        if (user.type === "monitor" && recordUser !== user.id.trim().toLowerCase()) return;
+        // Match user with users.json to get organisation
+        const matchedUser = users.find(u => u.id === recordUserId);
+        if (!matchedUser) return; // skip unknown users
+
+        const recordOrg = matchedUser.organisation;
+
+        // 🔒 Visibility control based on verified user info
+        if (user.type === "supervisor" && recordOrg !== user.organisation) return;
+        if (user.type === "monitor" && recordUserId !== user.id) return;
 
         addNewRow({
           ...data,
-          organisation: org ? org.toUpperCase() : ""
+          organisation: recordOrg
         });
+
         visibleCount++;
       });
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type} (${visibleCount} records visible).`;
-      if (visibleCount === 0) message.textContent += " No records found.";
+
+      if (visibleCount === 0) {
+        message.textContent += " No records found for your organisation.";
+      }
     } catch (err) {
       console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
@@ -232,12 +232,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadFirestoreData();
 
   // ==============================================
-  // ✅ Save Data
+  // ✅ Save Data (only admin)
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const incidents = [];
+    if (user.type !== "admin") {
+      alert("Only admin can save data.");
+      return;
+    }
 
+    const incidents = [];
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       incidents.push({
         case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
