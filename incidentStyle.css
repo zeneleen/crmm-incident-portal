@@ -1,292 +1,227 @@
-// ==============================================
-// ✅ Firebase Setup
-// ==============================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  setDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+/* ====== GENERAL LAYOUT ====== */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f4f7fa;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
 
-// ==============================================
-// ✅ Firebase Configuration
-// ==============================================
-const firebaseConfig = {
-  apiKey: "AIzaSyDP1uofFj_RHYZWLprN4P613UyXgi1suM30",
-  authDomain: "crmm-cxb.firebaseapp.com",
-  projectId: "crmm-cxb",
-  storageBucket: "crmm-cxb.appspot.com",
-  messagingSenderId: "920459967885",
-  appId: "1:920459967885:web:402c2800ebe786ee5391c4"
-};
+/* ====== HEADER ====== */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2b3a67;
+  color: white;
+  padding: 12px 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+header .user-info {
+  font-size: 15px;
+}
 
-// ==============================================
-// ✅ Main Logic
-// ==============================================
-document.addEventListener("DOMContentLoaded", async () => {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  if (!user) {
-    alert("Please login first.");
-    window.location.href = "index.html";
-    return;
+header button {
+  background: #f04e4e;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+header button:hover {
+  background: #8f1010;
+}
+
+/* ====== MAIN CONTENT ====== */
+main {
+  padding: 40px 60px;
+}
+
+h2 {
+  text-align: center;
+  color: #2b3a67;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+/* ====== TABLE DESIGN ====== */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  display: block;
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccd2da #f5f6f8;
+  table-layout: auto; /* ✅ Let content decide width */
+}
+
+/* ====== FIXED HEADER ====== */
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+thead th {
+  background-color: #2b3a67;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 10px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* ====== TABLE BODY ====== */
+td {
+  background-color: #ffffff;
+  padding: 10px;
+  border: 1px solid #e3e6ea;
+  vertical-align: middle;
+  text-align: center;
+}
+
+tr:hover td {
+  background-color: #e8f5fb;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* ====== COLUMN WIDTHS ====== */
+td:nth-child(1),
+th:nth-child(1),
+td:nth-child(2),
+th:nth-child(2) {
+  min-width: 180px;              /* ✅ More width for IDs */
+  text-align: center;
+  white-space: nowrap;           /* Keep ID on one line */
+  overflow: visible;             /* Prevent cutting */
+}
+
+td:nth-child(1) input,
+td:nth-child(2) select {
+  font-family: monospace;        /* ✅ Easier ID reading */
+  font-size: 14px;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* ====== INPUTS & DROPDOWNS ====== */
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd3da;
+  border-radius: 5px;
+  background-color: #f9fafc;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: #1cabe2;
+  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
+  outline: none;
+}
+
+/* ====== CUSTOM SELECT STYLING ====== */
+select {
+  height: 40px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+                    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 12px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+select.user_id {
+  padding-right: 36px;
+  background-position: right 14px center, right 8px center;
+}
+
+input:disabled {
+  background: #e9ecf0;
+  color: #555;
+  cursor: not-allowed;
+}
+
+/* ====== SUBMIT BUTTON ====== */
+#submitBtn {
+  display: block;
+  width: 220px;
+  margin: 25px auto;
+  background-color: #2b3a67;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+#submitBtn:hover {
+  background-color: #3b4d91;
+  transform: translateY(-1px);
+}
+
+/* ====== SUCCESS MESSAGE ====== */
+#message {
+  text-align: center;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+/* ====== ADD ROW BUTTON ====== */
+.table-actions {
+  text-align: right;
+  margin: 12px 0;
+}
+
+#addRowBtn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  font-size: 22px;
+  font-weight: bold;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+  display: inline-block;
+}
+
+#addRowBtn:hover {
+  background-color: #218838;
+}
+
+/* ====== SMALL SCREEN RESPONSIVE ====== */
+@media (max-width: 768px) {
+  main {
+    padding: 20px;
   }
 
-  // Display user info
-  document.getElementById("userInfo").textContent =
-    `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
-
-  const tableBody = document.getElementById("incidentBody");
-  const addRowBtn = document.getElementById("addRowBtn");
-  const message = document.getElementById("message");
-
-  // Disable submit button for non-admins
-  if (user.type !== "admin") {
-    document.getElementById("incidentForm").querySelector("button[type='submit']").disabled = true;
+  table {
+    font-size: 13px;
+    max-height: 60vh;
   }
 
-  // Load users.json
-  const response = await fetch("users.json");
-  const users = await response.json();
-
-  // Show add button only for admin
-  addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
-
-  // ==============================================
-  // ✅ Populate user dropdown
-  // ==============================================
-  const populateUserDropdown = (select, preselectedUserId = "") => {
-    select.innerHTML = "";
-    let availableUsers = users;
-
-    if (user.type === "supervisor") {
-      availableUsers = users.filter(u => u.organisation === user.organisation);
-    } else if (user.type === "monitor") {
-      availableUsers = [user];
-    }
-
-    availableUsers.forEach(u => {
-      const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = u.id;
-      select.appendChild(opt);
-    });
-
-    if (preselectedUserId) select.value = preselectedUserId;
-    else if (user.type === "monitor") select.value = user.id;
-  };
-
-  // ==============================================
-  // ✅ Auto-update organisation when user changes
-  // ==============================================
-  const linkUserToOrganisation = (row) => {
-    const userSelect = row.querySelector(".user_id");
-    const orgInput = row.querySelector(".organisation");
-
-    const updateOrg = () => {
-      const selectedUser = users.find(u => u.id === userSelect.value);
-      orgInput.value = selectedUser ? selectedUser.organisation : "";
-    };
-
-    userSelect.addEventListener("change", updateOrg);
-    updateOrg();
-  };
-
-  // ==============================================
-  // ✅ Role-based field access
-  // ==============================================
-  const setAccessByRole = (row) => {
-    const caseIdField = row.querySelector(".case_id");
-    const orgField = row.querySelector(".organisation");
-    const verifyStatus = row.querySelector(".verifyStatus");
-    const verifyRemarks = row.querySelector(".verifyRemarks");
-
-    if (user.type === "admin") {
-      row.querySelectorAll("input, select").forEach(el => el.disabled = false);
-      return;
-    }
-
-    if (user.type === "supervisor") {
-      orgField.disabled = true;
-      verifyStatus.disabled = true;
-      verifyRemarks.disabled = true;
-      caseIdField.disabled = true;
-      return;
-    }
-
-    if (user.type === "monitor") {
-      const editable = [".below18", ".violence", ".armedGroup", ".incidentRemarks"];
-      row.querySelectorAll("input, select").forEach(el => {
-        const isEditable = editable.some(cls => el.classList.contains(cls));
-        el.disabled = !isEditable;
-      });
-      caseIdField.disabled = true;
-      orgField.disabled = true;
-      verifyStatus.disabled = true;
-      verifyRemarks.disabled = true;
-    }
-  };
-
-  // ==============================================
-  // ✅ Normalize Firestore Data
-  // ==============================================
-  function normalizeFirestoreData(docData) {
-    if (!docData) return {};
-    const clean = {};
-    if (docData.fields) {
-      Object.entries(docData.fields).forEach(([key, val]) => {
-        clean[key.toLowerCase()] =
-          val.stringValue !== undefined ? val.stringValue : "";
-      });
-      return clean;
-    }
-    Object.entries(docData).forEach(([key, val]) => {
-      if (val && typeof val === "object" && val.stringValue !== undefined) {
-        clean[key.toLowerCase()] = val.stringValue;
-      } else {
-        clean[key.toLowerCase()] = val ?? "";
-      }
-    });
-    return clean;
+  input, select {
+    font-size: 13px;
+    padding: 8px 10px;
   }
 
-  // ==============================================
-  // ✅ Add Table Row
-  // ==============================================
-  const addNewRow = (data = {}) => {
-    const newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
-      <td><select class="user_id"></select></td>
-      <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
-      <td>
-        <select class="below18">
-          <option value="">-- Select --</option>
-          <option ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.below18 === "No" ? "selected" : ""}>No</option>
-        </select>
-      </td>
-      <td>
-        <select class="violence">
-          <option value="">-- Select --</option>
-          <option ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.violence === "No" ? "selected" : ""}>No</option>
-        </select>
-      </td>
-      <td>
-        <select class="armedGroup">
-          <option value="">-- Select --</option>
-          <option ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
-        </select>
-      </td>
-      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
-      <td>
-        <select class="verifyStatus">
-          <option value="">-- Select --</option>
-          <option ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
-          <option ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-          <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
-        </select>
-      </td>
-      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
-    `;
-    tableBody.appendChild(newRow);
-    const select = newRow.querySelector(".user_id");
-    populateUserDropdown(select, data.user_id);
-    linkUserToOrganisation(newRow);
-    setAccessByRole(newRow);
-  };
-
-  // ==============================================
-  // ✅ Load Firestore Data (strict enforcement)
-  // ==============================================
-  async function loadFirestoreData() {
-    try {
-      const incidentsRef = collection(db, "incidents");
-      let q;
-
-      if (user.type === "admin") {
-        q = incidentsRef;
-      } else if (user.type === "supervisor") {
-        q = query(incidentsRef, where("organisation", "==", user.organisation));
-      } else if (user.type === "monitor") {
-        q = query(incidentsRef, where("user_id", "==", user.id));
-      }
-
-      const snapshot = await getDocs(q);
-      tableBody.innerHTML = "";
-
-      snapshot.forEach(docSnap => {
-        const cleanData = normalizeFirestoreData(docSnap.data());
-        const dataOrg = (cleanData.organisation || "").trim().toLowerCase();
-        const userOrg = (user.organisation || "").trim().toLowerCase();
-        const dataUser = (cleanData.user_id || "").trim().toLowerCase();
-        const loggedUser = (user.id || "").trim().toLowerCase();
-
-        if (
-          user.type === "admin" ||
-          (user.type === "supervisor" && dataOrg === userOrg) ||
-          (user.type === "monitor" && dataUser === loggedUser)
-        ) {
-          addNewRow(cleanData);
-        }
-      });
-
-      message.style.color = "green";
-      message.textContent = `✅ Data loaded for ${user.type}`;
-    } catch (err) {
-      console.error("⚠️ Firestore load failed:", err);
-      message.style.color = "red";
-      message.textContent = "⚠️ Could not load data from Firestore.";
-    }
+  #submitBtn {
+    width: 100%;
   }
-
-  await loadFirestoreData();
-
-  // ==============================================
-  // ✅ Save Data (admin only)
-  // ==============================================
-  document.getElementById("incidentForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const incidents = [];
-    document.querySelectorAll("#incidentBody tr").forEach(row => {
-      incidents.push({
-        case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
-        user_id: row.querySelector(".user_id").value,
-        organisation: row.querySelector(".organisation").value,
-        below18: row.querySelector(".below18").value,
-        violence: row.querySelector(".violence").value,
-        armedgroup: row.querySelector(".armedGroup").value,
-        incidentremarks: row.querySelector(".incidentRemarks").value,
-        verifystatus: row.querySelector(".verifyStatus").value,
-        verifyremarks: row.querySelector(".verifyRemarks").value
-      });
-    });
-    try {
-      for (const inc of incidents) {
-        await setDoc(doc(db, "incidents", inc.case_id), inc);
-      }
-      message.style.color = "green";
-      message.textContent = "✅ Data successfully saved to Firestore.";
-    } catch (err) {
-      console.error("❌ Save error:", err);
-      message.style.color = "red";
-      message.textContent = "❌ Failed to save data to Firestore.";
-    }
-  });
-
-  // ==============================================
-  // ✅ Logout
-  // ==============================================
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("loggedInUser");
-    window.location.replace("index.html");
-  });
-});
+}
