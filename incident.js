@@ -132,22 +132,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!docData) return {};
     const clean = {};
 
-    // Case 1: REST-style (fields.stringValue)
     if (docData.fields) {
       Object.entries(docData.fields).forEach(([key, val]) => {
-        clean[key.toLowerCase()] =
-          val.stringValue !== undefined ? val.stringValue : "";
+        clean[key.toLowerCase()] = val.stringValue || "";
       });
       return clean;
     }
 
-    // Case 2: Firestore SDK style
     Object.entries(docData).forEach(([key, val]) => {
-      if (val && typeof val === "object" && val.stringValue !== undefined) {
-        clean[key.toLowerCase()] = val.stringValue;
-      } else {
-        clean[key.toLowerCase()] = val ?? "";
-      }
+      clean[key.toLowerCase()] = val?.stringValue ?? val ?? "";
     });
 
     return clean;
@@ -203,19 +196,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data
+  // ✅ Load Firestore Data (Role-based restriction)
   // ==============================================
   async function loadFirestoreData() {
     try {
       let q;
+
+      // 🔹 Admin — can see all
       if (user.type === "admin") {
         q = collection(db, "incidents");
-      } else if (user.type === "supervisor") {
+      }
+
+      // 🔹 Supervisor — can see all cases from their organisation
+      else if (user.type === "supervisor") {
         q = query(collection(db, "incidents"), where("organisation", "==", user.organisation));
-      } else if (user.type === "monitor") {
+      }
+
+      // 🔹 Monitor — can see only their own cases
+      else if (user.type === "monitor") {
         q = query(collection(db, "incidents"), where("user_id", "==", user.id));
       }
 
+      // 🔹 Fetch and render data
       const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
 
@@ -226,6 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded successfully (${snapshot.size} records).`;
+
     } catch (err) {
       console.error("⚠️ Firestore load failed:", err);
       message.style.color = "red";
