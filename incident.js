@@ -1,5 +1,5 @@
 // ==============================================
-// ✅ Firebase Setup
+// ✅ Firebase Setup | Zen
 // ==============================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
@@ -22,7 +22,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==============================================
-// ✅ Main Logic
+// ✅ Main Logic | Zen
 // ==============================================
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -38,8 +38,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tableBody = document.getElementById("incidentBody");
   const addRowBtn = document.getElementById("addRowBtn");
   const message = document.getElementById("message");
+
   const filterUser = document.getElementById("filterUser");
   const filterOrg = document.getElementById("filterOrg");
+  const filtersContainer = document.getElementById("filtersContainer");
 
   // === Load users.json ===
   const response = await fetch("users.json");
@@ -49,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   addRowBtn.style.display = user.type === "admin" ? "inline-block" : "none";
 
   // ==============================================
-  // ✅ Populate user dropdown (based on role)
+  // ✅ Populate user dropdown | Zen
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
@@ -71,9 +73,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     else if (user.type === "monitor") select.value = user.id;
   };
 
-  // ==============================================
-  // ✅ Auto link user_id → organisation
-  // ==============================================
+  // =================================================
+  // ✅ Link user_id → organisation auto-fill | Zen
+  // =================================================
   const linkUserToOrganisation = (row) => {
     const userSelect = row.querySelector(".user_id");
     const orgInput = row.querySelector(".organisation");
@@ -88,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Role-based field access
+  // ✅ Role-based field permissions | Zen
   // ==============================================
   const setAccessByRole = (row) => {
     const caseIdField = row.querySelector(".case_id");
@@ -119,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Add new row to table
+  // ✅ Add a new table row | Zen
   // ==============================================
   const addRow = (data = {}) => {
     const row = document.createElement("tr");
@@ -170,7 +172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   addRowBtn.addEventListener("click", () => addRow());
 
   // ==============================================
-  // ✅ Load Firestore data
+  // ✅ Load data from Firestore
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -198,7 +200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadFirestoreData();
 
   // ==============================================
-  // ✅ Save data to Firestore
+  // ✅ Save data to Firestore | Zen
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -231,52 +233,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ==============================================
-  // ✅ Populate filter dropdowns
-  // ==============================================
-  const allUsers = [...new Set(users.map(u => u.id))];
-  const allOrgs = [...new Set(users.map(u => u.organisation))];
+  // =======================================================
+  // ✅ Populate Filters (visible only if allowed) | Zen
+  // =======================================================
+  if (user.type === "admin" || user.type === "supervisor") {
+    const allUsers =
+      user.type === "supervisor"
+        ? users.filter(u => u.organisation === user.organisation).map(u => u.id)
+        : [...new Set(users.map(u => u.id))];
 
-  allUsers.forEach(u => {
-    const opt = document.createElement("option");
-    opt.value = u;
-    opt.textContent = u;
-    filterUser.appendChild(opt);
-  });
+    const allOrgs = [...new Set(users.map(u => u.organisation))];
 
-  allOrgs.forEach(o => {
-    const opt = document.createElement("option");
-    opt.value = o;
-    opt.textContent = o;
-    filterOrg.appendChild(opt);
-  });
-
-  // ==============================================
-  // ✅ Filter function (live table filtering)
-  // ==============================================
-  function applyFilters() {
-    const selectedUser = filterUser.value.trim().toLowerCase();
-    const selectedOrg = filterOrg.value.trim().toLowerCase();
-
-    document.querySelectorAll("#incidentBody tr").forEach(row => {
-      const userVal = row.querySelector(".user_id").value.trim().toLowerCase();
-      const orgVal = row.querySelector(".organisation").value.trim().toLowerCase();
-
-      const matchUser = !selectedUser || userVal === selectedUser;
-      const matchOrg = !selectedOrg || orgVal === selectedOrg;
-
-      row.style.display = matchUser && matchOrg ? "" : "none";
+    // Populate User Filter
+    filterUser.innerHTML = '<option value="">All Users</option>';
+    allUsers.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u;
+      opt.textContent = u;
+      filterUser.appendChild(opt);
     });
-  }
 
-  filterUser.addEventListener("change", applyFilters);
-  filterOrg.addEventListener("change", applyFilters);
+    // Populate Org Filter (only for Admins)
+    if (user.type === "admin") {
+      filterOrg.innerHTML = '<option value="">All Organisations</option>';
+      allOrgs.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o;
+        opt.textContent = o;
+        filterOrg.appendChild(opt);
+      });
+    }
 
-  // ==============================================
-  // ✅ Logout
-  // ==============================================
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("loggedInUser");
-    window.location.replace("index.html");
-  });
-});
+    // Apply filter function
+    function applyFilters() {
+      const selectedUser = filterUser.value.trim().toLowerCase();
+      const selectedOrg = user.type === "admin"
+        ? filterOrg.value.trim().toLowerCase()
+        : user.organisation.toLowerCase();
+
+      document.querySelectorAll("#incidentBody tr").forEach(row => {
+        const userVal = row.querySelector(".user_id").value.trim().toLowerCase();
+        const orgVal = row.querySelector(".organisation").value.trim().toLowerCase();
+
+        const matchUser = !selectedUser || userVal === selectedUser;
+        const matchOrg = !selectedOrg || orgVal === selectedOrg;
+
+        row.style.display = matchUser && matchOrg ? "" : "none";
+      });
