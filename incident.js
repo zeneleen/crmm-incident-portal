@@ -3,7 +3,7 @@
  * -----------------------------------------------
  * Admin → 2 filters: Organisation + User
  * Supervisor → 1 filter: User (own org only)
- * Monitor → No filters
+ * Monitor → No filters, can edit limited columns
  ***************************************************/
 
 // ==============================================
@@ -164,11 +164,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (user.type === "monitor") {
-      const editable = [".below18", ".violence", ".armedGroup", ".incidentRemarks"];
+      // ✅ Monitor can only edit below18, violence, armedGroup
+      const editable = [".below18", ".violence", ".armedGroup"];
       row.querySelectorAll("input, select").forEach(el => {
         const isEditable = editable.some(cls => el.classList.contains(cls));
         el.disabled = !isEditable;
       });
+
+      // Always disable these regardless
       caseIdField.disabled = true;
       orgField.disabled = true;
       verifyStatus.disabled = true;
@@ -206,16 +209,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
+      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..." disabled></td>
       <td>
-        <select class="verifyStatus">
+        <select class="verifyStatus" disabled>
           <option value="">-- Select --</option>
           <option ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
           <option ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
           <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
-      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
+      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..." disabled></td>
     `;
     tableBody.appendChild(newRow);
     populateUserDropdown(newRow.querySelector(".user_id"), data.user_id);
