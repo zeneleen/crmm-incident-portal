@@ -3,7 +3,7 @@
  * -----------------------------------------------
  * Admin → 2 filters: Organisation + User
  * Supervisor → 1 filter: User (own org only)
- * Monitor → No filters, can edit limited columns
+ * Monitor → No filters, can edit 3 columns
  ***************************************************/
 
 // ==============================================
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
-  // DOM elements
+  // DOM refs
   const tableBody = document.getElementById("incidentBody");
   const message = document.getElementById("message");
   const filterContainer = document.getElementById("filterContainer");
@@ -93,7 +93,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     filterContainer.style.display = "flex";
     userFilterGroup.style.display = "block";
 
-    // Only users from same organisation
     const sameOrgUsers = users.filter(u => u.organisation === user.organisation);
     sameOrgUsers.forEach(u => {
       const opt = document.createElement("option");
@@ -104,17 +103,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ==============================================
-  // ✅ Populate user dropdown in table
+  // ✅ Populate User Dropdown
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
 
-    if (user.type === "supervisor") {
+    if (user.type === "supervisor")
       availableUsers = users.filter(u => u.organisation === user.organisation);
-    } else if (user.type === "monitor") {
+    else if (user.type === "monitor")
       availableUsers = [user];
-    }
 
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
@@ -145,38 +143,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ✅ Role-based Access Control
   // ==============================================
   const setAccessByRole = (row) => {
-    const caseIdField = row.querySelector(".case_id");
-    const orgField = row.querySelector(".organisation");
-    const verifyStatus = row.querySelector(".verifyStatus");
-    const verifyRemarks = row.querySelector(".verifyRemarks");
+    const allInputs = row.querySelectorAll("input, select");
 
+    // Admin: all enabled
     if (user.type === "admin") {
-      row.querySelectorAll("input, select").forEach(el => el.disabled = false);
+      allInputs.forEach(el => (el.disabled = false));
       return;
     }
 
+    // Supervisor: all read-only
     if (user.type === "supervisor") {
-      caseIdField.disabled = true;
-      orgField.disabled = true;
-      verifyStatus.disabled = true;
-      verifyRemarks.disabled = true;
+      allInputs.forEach(el => (el.disabled = true));
       return;
     }
 
+    // Monitor: only 3 editable
     if (user.type === "monitor") {
-      // ✅ Monitor can only edit below18, violence, armedGroup
-      const editable = [".below18", ".violence", ".armedGroup"];
-      row.querySelectorAll("input, select").forEach(el => {
-        const isEditable = editable.some(cls => el.classList.contains(cls));
-        el.disabled = !isEditable;
-      });
+      allInputs.forEach(el => (el.disabled = true)); // disable all first
 
-      // Always disable these regardless
-      caseIdField.disabled = true;
-      orgField.disabled = true;
-      verifyStatus.disabled = true;
-      verifyRemarks.disabled = true;
-      return;
+      // then re-enable these 3 only
+      const below18 = row.querySelector(".below18");
+      const violence = row.querySelector(".violence");
+      const armedGroup = row.querySelector(".armedGroup");
+
+      if (below18) below18.disabled = false;
+      if (violence) violence.disabled = false;
+      if (armedGroup) armedGroup.disabled = false;
     }
   };
 
@@ -189,38 +181,43 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
       <td><select class="user_id"></select></td>
       <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
+
       <td>
         <select class="below18">
           <option value="">-- Select --</option>
-          <option ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.below18 === "No" ? "selected" : ""}>No</option>
+          <option value="Yes" ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
+          <option value="No" ${data.below18 === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
+
       <td>
         <select class="violence">
           <option value="">-- Select --</option>
-          <option ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.violence === "No" ? "selected" : ""}>No</option>
+          <option value="Yes" ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
+          <option value="No" ${data.violence === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
+
       <td>
         <select class="armedGroup">
           <option value="">-- Select --</option>
-          <option ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
-          <option ${data.armedgroup === "No" ? "selected" : ""}>No</option>
+          <option value="Yes" ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
+          <option value="No" ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..." disabled></td>
+
+      <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
-        <select class="verifyStatus" disabled>
+        <select class="verifyStatus">
           <option value="">-- Select --</option>
-          <option ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
-          <option ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
-          <option ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
+          <option value="Verified" ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
+          <option value="Confirmed (to a reasonable level)" ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
+          <option value="Unverified" ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
-      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..." disabled></td>
+      <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
+
     tableBody.appendChild(newRow);
     populateUserDropdown(newRow.querySelector(".user_id"), data.user_id);
     linkUserToOrganisation(newRow);
@@ -228,42 +225,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data (with Filter Support)
+  // ✅ Load Firestore Data
   // ==============================================
   async function loadFirestoreData() {
     try {
       const incidentsRef = collection(db, "incidents");
       let q;
 
-      if (user.type === "admin") {
+      if (user.type === "admin")
         q = incidentsRef;
-      } else if (user.type === "supervisor") {
+      else if (user.type === "supervisor")
         q = query(incidentsRef, where("organisation", "==", user.organisation));
-      } else if (user.type === "monitor") {
+      else if (user.type === "monitor")
         q = query(incidentsRef, where("user_id", "==", user.id));
-      }
 
       const snapshot = await getDocs(q);
       tableBody.innerHTML = "";
 
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-
-        // Apply filter logic (client-side)
-        const orgSelected = orgFilter.value;
-        const userSelected = userFilter.value;
-
-        if (user.type === "admin") {
-          if (
-            (orgSelected && data.organisation !== orgSelected) ||
-            (userSelected && data.user_id !== userSelected)
-          ) return;
-        } else if (user.type === "supervisor") {
-          if (userSelected && data.user_id !== userSelected) return;
-        }
-
-        addNewRow(data);
-      });
+      snapshot.forEach(docSnap => addNewRow(docSnap.data()));
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type}`;
@@ -276,10 +255,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadFirestoreData();
 
-  // Apply filter button
-  applyFilterBtn?.addEventListener("click", async () => {
-    await loadFirestoreData();
-  });
+  // Filter apply
+  applyFilterBtn?.addEventListener("click", async () => await loadFirestoreData());
 
   // ==============================================
   // ✅ Save Data (Admin only)
@@ -304,9 +281,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     try {
-      for (const inc of incidents) {
+      for (const inc of incidents)
         await setDoc(doc(db, "incidents", inc.case_id), inc);
-      }
+
       message.style.color = "green";
       message.textContent = "✅ Data successfully saved to Firestore.";
     } catch (err) {
