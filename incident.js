@@ -73,7 +73,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     orgFilterGroup.style.display = "block";
     userFilterGroup.style.display = "block";
 
-    // All organisations
     const orgs = [...new Set(users.map(u => u.organisation))];
     orgs.forEach(o => {
       const opt = document.createElement("option");
@@ -82,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       orgFilter.appendChild(opt);
     });
 
-    // All users
     users.forEach(u => {
       const opt = document.createElement("option");
       opt.value = u.id;
@@ -95,7 +93,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     orgFilterGroup.style.display = "block";
     userFilterGroup.style.display = "block";
 
-    // Only SCI, IRC, UNICEF
     const allowedOrgs = ["SCI", "IRC", "UNICEF"];
     allowedOrgs.forEach(o => {
       const opt = document.createElement("option");
@@ -104,7 +101,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       orgFilter.appendChild(opt);
     });
 
-    // Only users from SCI, IRC, UNICEF
     const allowedUsers = users.filter(u => allowedOrgs.includes(u.organisation));
     allowedUsers.forEach(u => {
       const opt = document.createElement("option");
@@ -173,19 +169,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setAccessByRole = (row) => {
     const allInputs = row.querySelectorAll("input, select");
 
-    // Admin & Admin_User: all editable
     if (user.type === "admin" || user.type === "admin_user") {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
 
-    // Supervisor: all read-only
     if (user.type === "supervisor") {
       allInputs.forEach(el => (el.disabled = true));
       return;
     }
 
-    // Monitor: only 3 editable
     if (user.type === "monitor") {
       allInputs.forEach(el => (el.disabled = true));
       const below18 = row.querySelector(".below18");
@@ -207,7 +200,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="case_id" value="${data.case_id || ""}" readonly></td>
       <td><select class="user_id"></select></td>
       <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
-
       <td>
         <select class="below18">
           <option value="">-- Select --</option>
@@ -215,7 +207,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="No" ${data.below18 === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-
       <td>
         <select class="violence">
           <option value="">-- Select --</option>
@@ -223,7 +214,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="No" ${data.violence === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-
       <td>
         <select class="armedGroup">
           <option value="">-- Select --</option>
@@ -231,7 +221,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="No" ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
-
       <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
@@ -251,7 +240,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Load Firestore Data
+  // ✅ Load Firestore Data (with filters)
   // ==============================================
   async function loadFirestoreData() {
     try {
@@ -266,9 +255,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         q = query(incidentsRef, where("user_id", "==", user.id));
 
       const snapshot = await getDocs(q);
+      const orgSelected = orgFilter?.value || "";
+      const userSelected = userFilter?.value || "";
+
       tableBody.innerHTML = "";
 
-      snapshot.forEach(docSnap => addNewRow(docSnap.data()));
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+
+        // ✅ Apply filters client-side
+        if (user.type === "admin" || user.type === "admin_user") {
+          if (orgSelected && data.organisation !== orgSelected) return;
+          if (userSelected && data.user_id !== userSelected) return;
+        } else if (user.type === "supervisor") {
+          if (userSelected && data.user_id !== userSelected) return;
+        }
+
+        addNewRow(data);
+      });
 
       message.style.color = "green";
       message.textContent = `✅ Data loaded for ${user.type}`;
@@ -281,8 +285,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadFirestoreData();
 
-  // Filter apply
-  applyFilterBtn?.addEventListener("click", async () => await loadFirestoreData());
+  // ✅ Apply filter button
+  applyFilterBtn?.addEventListener("click", async () => {
+    await loadFirestoreData();
+  });
 
   // ==============================================
   // ✅ Save Data (Admin + Admin_User only)
@@ -294,7 +300,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const incidents = [];
     document.querySelectorAll("#incidentBody tr").forEach(row => {
       const orgVal = row.querySelector(".organisation").value;
-      // Restrict admin_user saves to SCI, IRC, UNICEF
       if (user.type === "admin_user" && !["SCI", "IRC", "UNICEF"].includes(orgVal)) return;
 
       incidents.push({
