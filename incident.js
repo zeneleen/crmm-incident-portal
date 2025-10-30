@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
-  // DOM refs
+  // DOM references
   const tableBody = document.getElementById("incidentBody");
   const message = document.getElementById("message");
   const filterContainer = document.getElementById("filterContainer");
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ==============================================
-  // ✅ Populate User Dropdown
+  // ✅ Populate User Dropdown in Table
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
@@ -232,7 +232,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       </td>
       <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
-
     tableBody.appendChild(newRow);
     populateUserDropdown(newRow.querySelector(".user_id"), data.user_id);
     linkUserToOrganisation(newRow);
@@ -263,7 +262,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
 
-        // ✅ Apply filters client-side
+        // ✅ Apply client-side filters
         if (user.type === "admin" || user.type === "admin_user") {
           if (orgSelected && data.organisation !== orgSelected) return;
           if (userSelected && data.user_id !== userSelected) return;
@@ -284,26 +283,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   await loadFirestoreData();
-
-  // ✅ Apply filter button
-  applyFilterBtn?.addEventListener("click", async () => {
-    await loadFirestoreData();
-  });
+  applyFilterBtn?.addEventListener("click", async () => await loadFirestoreData());
 
   // ==============================================
-  // ✅ Save Data (Admin + Admin_User only)
+  // ✅ Save Data (Admin + Admin_User)
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (user.type !== "admin" && user.type !== "admin_user") return;
 
+    if (user.type !== "admin" && user.type !== "admin_user") {
+      alert("You don’t have permission to save data.");
+      return;
+    }
+
+    const rows = document.querySelectorAll("#incidentBody tr");
+    if (rows.length === 0) {
+      alert("No data to save.");
+      return;
+    }
+
+    const allowedOrgs = ["SCI", "IRC", "UNICEF"];
     const incidents = [];
-    document.querySelectorAll("#incidentBody tr").forEach(row => {
-      const orgVal = row.querySelector(".organisation").value;
-      if (user.type === "admin_user" && !["SCI", "IRC", "UNICEF"].includes(orgVal)) return;
+
+    rows.forEach((row) => {
+      const orgVal = row.querySelector(".organisation").value.trim();
+      if (user.type === "admin_user" && !allowedOrgs.includes(orgVal)) return;
+
+      const caseId =
+        row.querySelector(".case_id").value.trim() ||
+        `case_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
       incidents.push({
-        case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
+        case_id: caseId,
         user_id: row.querySelector(".user_id").value,
         organisation: orgVal,
         below18: row.querySelector(".below18").value,
@@ -311,18 +322,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         armedgroup: row.querySelector(".armedGroup").value,
         incidentremarks: row.querySelector(".incidentRemarks").value,
         verifystatus: row.querySelector(".verifyStatus").value,
-        verifyremarks: row.querySelector(".verifyRemarks").value
+        verifyremarks: row.querySelector(".verifyRemarks").value,
+        updatedBy: user.id,
+        updatedAt: new Date().toISOString()
       });
     });
 
-    try {
-      for (const inc of incidents)
-        await setDoc(doc(db, "incidents", inc.case_id), inc);
+    if (incidents.length === 0) {
+      message.style.color = "red";
+      message.textContent = "⚠️ No valid records to save.";
+      return;
+    }
 
+    try {
+      for (const inc of incidents) {
+        await setDoc(doc(db, "incidents", inc.case_id), inc, { merge: true });
+      }
       message.style.color = "green";
-      message.textContent = "✅ Data successfully saved to Firestore.";
+      message.textContent = `✅ ${incidents.length} record(s) successfully saved to Firestore.`;
     } catch (err) {
-      console.error("❌ Save error:", err);
+      console.error("❌ Firestore save error:", err);
       message.style.color = "red";
       message.textContent = "❌ Failed to save data to Firestore.";
     }
