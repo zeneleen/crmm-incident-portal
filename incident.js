@@ -2,6 +2,7 @@
  * CRMM Incident Portal | Role-based Filters
  * -----------------------------------------------
  * Admin → 2 filters: Organisation + User
+ * Admin_User → same as Admin but limited to SCI, IRC, UNICEF
  * Supervisor → 1 filter: User (own org only)
  * Monitor → No filters, can edit 3 columns
  ***************************************************/
@@ -72,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     orgFilterGroup.style.display = "block";
     userFilterGroup.style.display = "block";
 
-    // Populate organisation list
+    // All organisations
     const orgs = [...new Set(users.map(u => u.organisation))];
     orgs.forEach(o => {
       const opt = document.createElement("option");
@@ -81,8 +82,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       orgFilter.appendChild(opt);
     });
 
-    // Populate all users
+    // All users
     users.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = u.id;
+      userFilter.appendChild(opt);
+    });
+
+  } else if (user.type === "admin_user") {
+    filterContainer.style.display = "flex";
+    orgFilterGroup.style.display = "block";
+    userFilterGroup.style.display = "block";
+
+    // Only SCI, IRC, UNICEF
+    const allowedOrgs = ["SCI", "IRC", "UNICEF"];
+    allowedOrgs.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o;
+      opt.textContent = o;
+      orgFilter.appendChild(opt);
+    });
+
+    // Only users from SCI, IRC, UNICEF
+    const allowedUsers = users.filter(u => allowedOrgs.includes(u.organisation));
+    allowedUsers.forEach(u => {
       const opt = document.createElement("option");
       opt.value = u.id;
       opt.textContent = u.id;
@@ -113,6 +137,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       availableUsers = users.filter(u => u.organisation === user.organisation);
     else if (user.type === "monitor")
       availableUsers = [user];
+    else if (user.type === "admin_user") {
+      const allowedOrgs = ["SCI", "IRC", "UNICEF"];
+      availableUsers = users.filter(u => allowedOrgs.includes(u.organisation));
+    }
 
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
@@ -145,8 +173,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setAccessByRole = (row) => {
     const allInputs = row.querySelectorAll("input, select");
 
-    // Admin: all enabled
-    if (user.type === "admin") {
+    // Admin & Admin_User: all editable
+    if (user.type === "admin" || user.type === "admin_user") {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
@@ -159,9 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Monitor: only 3 editable
     if (user.type === "monitor") {
-      allInputs.forEach(el => (el.disabled = true)); // disable all first
-
-      // then re-enable these 3 only
+      allInputs.forEach(el => (el.disabled = true));
       const below18 = row.querySelector(".below18");
       const violence = row.querySelector(".violence");
       const armedGroup = row.querySelector(".armedGroup");
@@ -232,7 +258,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const incidentsRef = collection(db, "incidents");
       let q;
 
-      if (user.type === "admin")
+      if (user.type === "admin" || user.type === "admin_user")
         q = incidentsRef;
       else if (user.type === "supervisor")
         q = query(incidentsRef, where("organisation", "==", user.organisation));
@@ -259,18 +285,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyFilterBtn?.addEventListener("click", async () => await loadFirestoreData());
 
   // ==============================================
-  // ✅ Save Data (Admin only)
+  // ✅ Save Data (Admin + Admin_User only)
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (user.type !== "admin") return;
+    if (user.type !== "admin" && user.type !== "admin_user") return;
 
     const incidents = [];
     document.querySelectorAll("#incidentBody tr").forEach(row => {
+      const orgVal = row.querySelector(".organisation").value;
+      // Restrict admin_user saves to SCI, IRC, UNICEF
+      if (user.type === "admin_user" && !["SCI", "IRC", "UNICEF"].includes(orgVal)) return;
+
       incidents.push({
         case_id: row.querySelector(".case_id").value || `case_${Date.now()}`,
         user_id: row.querySelector(".user_id").value,
-        organisation: row.querySelector(".organisation").value,
+        organisation: orgVal,
         below18: row.querySelector(".below18").value,
         violence: row.querySelector(".violence").value,
         armedgroup: row.querySelector(".armedGroup").value,
