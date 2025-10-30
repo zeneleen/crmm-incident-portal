@@ -1,10 +1,10 @@
 /***************************************************
- * CRMM Incident Portal | Role-based Filters
- * -----------------------------------------------
- * Admin → 2 filters: Organisation + User
+ * CRMM Incident Portal | Role-based Filters & Edit Access
+ * --------------------------------------------------------
+ * Admin → 2 filters: Organisation + User (full edit)
  * Admin_User → same as Admin but limited to SCI, IRC, UNICEF
- * Supervisor → 1 filter: User (own org only)
- * Monitor → No filters, can edit 3 columns
+ * Supervisor → 1 filter: User (own org only), can edit 5 fields
+ * Monitor → No filters, can edit 3 fields
  ***************************************************/
 
 // ==============================================
@@ -47,11 +47,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Display user info
+  // Display logged-in user
   document.getElementById("userInfo").textContent =
     `Logged in as: ${user.id} (${user.organisation} | ${user.type})`;
 
-  // DOM references
+  // DOM elements
   const tableBody = document.getElementById("incidentBody");
   const message = document.getElementById("message");
   const filterContainer = document.getElementById("filterContainer");
@@ -169,25 +169,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setAccessByRole = (row) => {
     const allInputs = row.querySelectorAll("input, select");
 
+    // 🔹 Admin / Admin_User → Full access
     if (user.type === "admin" || user.type === "admin_user") {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
 
+    // 🔹 Supervisor → Limited edit rights
     if (user.type === "supervisor") {
       allInputs.forEach(el => (el.disabled = true));
+      const editable = [
+        ".user_id",
+        ".below18",
+        ".violence",
+        ".armedGroup",
+        ".incidentRemarks"
+      ];
+      editable.forEach(cls => {
+        const el = row.querySelector(cls);
+        if (el) el.disabled = false;
+      });
       return;
     }
 
+    // 🔹 Monitor → Only 3 editable
     if (user.type === "monitor") {
       allInputs.forEach(el => (el.disabled = true));
-      const below18 = row.querySelector(".below18");
-      const violence = row.querySelector(".violence");
-      const armedGroup = row.querySelector(".armedGroup");
-
-      if (below18) below18.disabled = false;
-      if (violence) violence.disabled = false;
-      if (armedGroup) armedGroup.disabled = false;
+      const editable = [".below18", ".violence", ".armedGroup"];
+      editable.forEach(cls => {
+        const el = row.querySelector(cls);
+        if (el) el.disabled = false;
+      });
     }
   };
 
@@ -286,12 +298,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyFilterBtn?.addEventListener("click", async () => await loadFirestoreData());
 
   // ==============================================
-  // ✅ Save Data (Admin + Admin_User)
+  // ✅ Save Data (Admin, Admin_User, Supervisor)
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (user.type !== "admin" && user.type !== "admin_user") {
+    if (!["admin", "admin_user", "supervisor"].includes(user.type)) {
       alert("You don’t have permission to save data.");
       return;
     }
