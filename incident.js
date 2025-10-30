@@ -176,6 +176,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       orgField.disabled = true;
       verifyStatus.disabled = true;
       verifyRemarks.disabled = true;
+      return;
     }
   };
 
