@@ -18,6 +18,30 @@
     "organisation": "UNICEF"
   },
   {
+    "id": "sundar",
+    "password": "Unicef123",
+    "type": "admin_user",
+    "organisation": "UNICEF"
+  },
+  {
+    "id": "ruma",
+    "password": "Unicef123",
+    "type": "admin_user",
+    "organisation": "UNICEF"
+  },
+  {
+    "id": "natalie",
+    "password": "Unicef123",
+    "type": "admin_user",
+    "organisation": "UNICEF"
+  },
+  {
+    "id": "shatabdi",
+    "password": "Unicef123",
+    "type": "admin_user",
+    "organisation": "UNICEF"
+  },
+  {
     "id": "taslima",
     "password": "Sci123",
     "type": "supervisor",
