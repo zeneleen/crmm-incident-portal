@@ -14,7 +14,7 @@
   {
     "id": "patrick",
     "password": "Unicef123",
-    "type": "admin",
+    "type": "admin_user",
     "organisation": "UNICEF"
   },
   {
