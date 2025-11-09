@@ -171,6 +171,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       availableUsers = users.filter(u => allowedOrgs.includes(u.organisation));
     }
 
+    // Placeholder
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select";
+    placeholder.disabled = true;
+    if (!preselectedUserId) placeholder.selected = true;
+    select.appendChild(placeholder);
+
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
       opt.value = u.id;
@@ -207,10 +215,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
-
-    // For non-admins, dateassigned is always read-only (rendered as span)
-    // so no need to toggle that here—just make sure inputs that *exist*
-    // get disabled as needed.
 
     // 🔹 Supervisor → Limited edit rights (5 fields)
     if (user.type === "supervisor") {
@@ -280,21 +284,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
       <td>
         <select class="below18">
-          <option value="">-- Select --</option>
+          <option value="" ${!data.below18 ? "selected" : ""} disabled>Select</option>
           <option value="Yes" ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.below18 === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="violence">
-          <option value="">-- Select --</option>
+          <option value="" ${!data.violence ? "selected" : ""} disabled>Select</option>
           <option value="Yes" ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.violence === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="armedGroup">
-          <option value="">-- Select --</option>
+          <option value="" ${!data.armedgroup ? "selected" : ""} disabled>Select</option>
           <option value="Yes" ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
@@ -305,9 +309,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
-          <option value="">-- Select --</option>
+          <option value="" ${!data.verifystatus ? "selected" : ""} disabled>Select</option>
           <option value="Verified" ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
-          <option value="Confirmed (to a reasonable level)" ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
+          <option value="Confirmed (to a reasonable level)" ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>
+            Confirmed (to a reasonable level)
+          </option>
           <option value="Unverified" ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
