@@ -4,7 +4,8 @@
  * Admin → 2 filters: Organisation + User (full edit)
  * Admin_User → same as Admin but limited to SCI, IRC, UNICEF
  * Supervisor → 1 filter: User (own org only), can edit 5 fields
- * Monitor → No filters, can edit 3 fields
+ * Monitor → No filters, can edit & submit 3 fields:
+ *           below18, violence, armedgroup
  ***************************************************/
 
 // ==============================================
@@ -106,15 +107,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const orgs = [...new Set(users.map(u => u.organisation))];
     orgs.forEach(o => {
       const opt = document.createElement("option");
-      opt.value = o;
-      opt.textContent = o;
+      opt.value = o; opt.textContent = o;
       orgFilter.appendChild(opt);
     });
-
     users.forEach(u => {
       const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = u.id;
+      opt.value = u.id; opt.textContent = u.id;
       userFilter.appendChild(opt);
     });
 
@@ -126,16 +124,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const allowedOrgs = ["SCI", "IRC", "UNICEF"];
     allowedOrgs.forEach(o => {
       const opt = document.createElement("option");
-      opt.value = o;
-      opt.textContent = o;
+      opt.value = o; opt.textContent = o;
       orgFilter.appendChild(opt);
     });
-
     const allowedUsers = users.filter(u => allowedOrgs.includes(u.organisation));
     allowedUsers.forEach(u => {
       const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = u.id;
+      opt.value = u.id; opt.textContent = u.id;
       userFilter.appendChild(opt);
     });
 
@@ -146,10 +141,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sameOrgUsers = users.filter(u => u.organisation === user.organisation);
     sameOrgUsers.forEach(u => {
       const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = u.id;
+      opt.value = u.id; opt.textContent = u.id;
       userFilter.appendChild(opt);
     });
+
+  } else {
+    // monitor → no filters
+    filterContainer.style.display = "none";
   }
 
   // ==============================================
@@ -157,16 +155,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
-
-    // Placeholder "--"
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "--";
-    placeholder.disabled = true;
-    if (!preselectedUserId) placeholder.selected = true;
-    select.appendChild(placeholder);
-
     let availableUsers = users;
+
     if (user.type === "supervisor")
       availableUsers = users.filter(u => u.organisation === user.organisation);
     else if (user.type === "monitor")
@@ -178,8 +168,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = u.id;
+      opt.value = u.id; opt.textContent = u.id;
       select.appendChild(opt);
     });
 
@@ -207,13 +196,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setAccessByRole = (row) => {
     const allInputs = row.querySelectorAll("input, select");
 
-    // Admin / Admin_User → Full access
+    // Admin & Admin_User → full access
     if (user.type === "admin" || user.type === "admin_user") {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
 
-    // Supervisor → Limited edit rights (5 fields)
+    // Supervisor → can edit 5 fields
     if (user.type === "supervisor") {
       allInputs.forEach(el => (el.disabled = true));
       const editable = [
@@ -230,11 +219,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Monitor → Only 3 editable
+    // Monitor → ONLY 3 editable (and submit only those)
     if (user.type === "monitor") {
       allInputs.forEach(el => (el.disabled = true));
-      const editable = [".below18", ".violence", ".armedGroup"];
-      editable.forEach(cls => {
+      [".below18", ".violence", ".armedGroup"].forEach(cls => {
         const el = row.querySelector(cls);
         if (el) el.disabled = false;
       });
@@ -242,12 +230,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Build the two new cells (dateassigned & days elapsed)
+  // ✅ Build dateassigned + days elapsed cells
   // ==============================================
   function buildAssignedCells(data) {
     const ymd = toYMD(data.dateassigned);
 
-    // Assigned date cell
     let assignedCellHTML = "";
     if (user.type === "admin" || user.type === "admin_user") {
       assignedCellHTML = `
@@ -263,7 +250,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       `;
     }
 
-    // Days elapsed cell (read-only)
     const days = ymd ? daysBetweenYMD(ymd) : "";
     const daysCellHTML = `<td class="cell-dayselapsed">${days}</td>`;
 
@@ -271,7 +257,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ==============================================
-  // ✅ Add Table Row (must match <thead> order)
+  // ✅ Build one table row
   // ==============================================
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
@@ -281,21 +267,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
       <td>
         <select class="below18">
-          <option value="" ${!data.below18 ? "selected" : ""} disabled>--</option>
+          <option value="">--</option>
           <option value="Yes" ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.below18 === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="violence">
-          <option value="" ${!data.violence ? "selected" : ""} disabled>--</option>
+          <option value="">--</option>
           <option value="Yes" ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.violence === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="armedGroup">
-          <option value="" ${!data.armedgroup ? "selected" : ""} disabled>--</option>
+          <option value="">--</option>
           <option value="Yes" ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
@@ -306,11 +292,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
-          <option value="" ${!data.verifystatus ? "selected" : ""} disabled>--</option>
+          <option value="">--</option>
           <option value="Verified" ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
-          <option value="Confirmed (to a reasonable level)" ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>
-            Confirmed (to a reasonable level)
-          </option>
+          <option value="Confirmed (to a reasonable level)" ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>Confirmed (to a reasonable level)</option>
           <option value="Unverified" ${data.verifystatus === "Unverified" ? "selected" : ""}>Unverified</option>
         </select>
       </td>
@@ -324,7 +308,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Live recompute of days elapsed on date edit
+  // ✅ Live recompute of days elapsed when admin edits assigned date
   // ==============================================
   document.addEventListener("input", (e) => {
     const el = e.target;
@@ -337,19 +321,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ==============================================
-  // ✅ Load Firestore Data (with filters)
+  // ✅ Load Firestore Data (with server & client filters)
   // ==============================================
   async function loadFirestoreData() {
     try {
       const incidentsRef = collection(db, "incidents");
       let q;
 
-      if (user.type === "admin" || user.type === "admin_user")
+      if (user.type === "admin" || user.type === "admin_user") {
         q = incidentsRef;
-      else if (user.type === "supervisor")
+      } else if (user.type === "supervisor") {
         q = query(incidentsRef, where("organisation", "==", user.organisation));
-      else if (user.type === "monitor")
+      } else { // monitor
         q = query(incidentsRef, where("user_id", "==", user.id));
+      }
 
       const snapshot = await getDocs(q);
       const orgSelected = orgFilter?.value || "";
@@ -360,7 +345,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
 
-        // Client-side filters for admin/admin_user and supervisor’s user filter
+        // client-side filters for admin/admin_user/supervisor
         if (user.type === "admin" || user.type === "admin_user") {
           if (orgSelected && data.organisation !== orgSelected) return;
           if (userSelected && data.user_id !== userSelected) return;
@@ -384,12 +369,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyFilterBtn?.addEventListener("click", async () => await loadFirestoreData());
 
   // ==============================================
-  // ✅ Save Data (Admin, Admin_User, Supervisor)
+  // ✅ Save Data — field-level enforcement by role
   // ==============================================
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!["admin", "admin_user", "supervisor"].includes(user.type)) {
+    // Everyone except monitors/supervisors/admins blocked? (No—monitors allowed now)
+    if (!["admin", "admin_user", "supervisor", "monitor"].includes(user.type)) {
       alert("You don’t have permission to save data.");
       return;
     }
@@ -401,53 +387,64 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const allowedOrgs = ["SCI", "IRC", "UNICEF"];
-    const incidents = [];
+    const toSave = [];
 
     rows.forEach((row) => {
-      const orgVal = row.querySelector(".organisation").value.trim();
-      if (user.type === "admin_user" && !allowedOrgs.includes(orgVal)) return;
-
       const caseId =
         row.querySelector(".case_id").value.trim() ||
         `case_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-      const record = {
-        case_id: caseId,
-        user_id: row.querySelector(".user_id").value,
-        organisation: orgVal,
-        below18: row.querySelector(".below18").value,
-        violence: row.querySelector(".violence").value,
-        armedgroup: row.querySelector(".armedGroup").value,
-        incidentremarks: row.querySelector(".incidentRemarks").value,
-        verifystatus: row.querySelector(".verifyStatus").value,
-        verifyremarks: row.querySelector(".verifyRemarks").value,
-        updatedBy: user.id,
-        updatedAt: new Date().toISOString()
-      };
+      // Build a payload according to role
+      let record = { case_id: caseId, updatedBy: user.id, updatedAt: new Date().toISOString() };
 
-      // Admin/Admin_User can save dateassigned
-      if (user.type === "admin" || user.type === "admin_user") {
+      if (user.type === "monitor") {
+        // 🚫 Monitors only send 3 fields
+        record.below18   = row.querySelector(".below18").value;
+        record.violence  = row.querySelector(".violence").value;
+        record.armedgroup= row.querySelector(".armedGroup").value;
+
+      } else if (user.type === "supervisor") {
+        // Supervisors can modify 5 fields (+ keep identifiers)
+        record.user_id          = row.querySelector(".user_id").value;
+        record.organisation     = row.querySelector(".organisation").value.trim();
+        record.below18          = row.querySelector(".below18").value;
+        record.violence         = row.querySelector(".violence").value;
+        record.armedgroup       = row.querySelector(".armedGroup").value;
+        record.incidentremarks  = row.querySelector(".incidentRemarks").value;
+
+      } else if (user.type === "admin" || user.type === "admin_user") {
+        // Admin/Admin_User full edit
+        const orgVal = row.querySelector(".organisation").value.trim();
+        if (user.type === "admin_user" && !allowedOrgs.includes(orgVal)) return;
+
+        record.user_id          = row.querySelector(".user_id").value;
+        record.organisation     = orgVal;
+        record.below18          = row.querySelector(".below18").value;
+        record.violence         = row.querySelector(".violence").value;
+        record.armedgroup       = row.querySelector(".armedGroup").value;
+        record.incidentremarks  = row.querySelector(".incidentRemarks").value;
+        record.verifystatus     = row.querySelector(".verifyStatus").value;
+        record.verifyremarks    = row.querySelector(".verifyRemarks").value;
+
         const dateInput = row.querySelector(".dateassigned-input");
-        if (dateInput) {
-          record.dateassigned = dateInput.value || null; // ISO yyyy-mm-dd
-        }
+        if (dateInput) record.dateassigned = dateInput.value || null;
       }
 
-      incidents.push(record);
+      toSave.push(record);
     });
 
-    if (incidents.length === 0) {
+    if (toSave.length === 0) {
       message.style.color = "red";
       message.textContent = "⚠️ No valid records to save.";
       return;
     }
 
     try {
-      for (const inc of incidents) {
-        await setDoc(doc(db, "incidents", inc.case_id), inc, { merge: true });
+      for (const rec of toSave) {
+        await setDoc(doc(db, "incidents", rec.case_id), rec, { merge: true });
       }
       message.style.color = "green";
-      message.textContent = `✅ ${incidents.length} record(s) successfully saved to Firestore.`;
+      message.textContent = `✅ ${toSave.length} record(s) saved.`;
     } catch (err) {
       console.error("❌ Firestore save error:", err);
       message.style.color = "red";
