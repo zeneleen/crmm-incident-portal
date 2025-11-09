@@ -22,6 +22,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // ==============================================
+//
 // ✅ Firebase Configuration
 // ==============================================
 const firebaseConfig = {
@@ -35,6 +36,38 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// ==============================================
+// ✅ Utilities
+// ==============================================
+function toYMD(dateVal) {
+  if (!dateVal) return "";
+  // Firestore Timestamp-like object?
+  if (dateVal && typeof dateVal.toDate === "function") {
+    const d = dateVal.toDate();
+    return d.toISOString().slice(0, 10);
+  }
+  // String / Date
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d)) return "";
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+}
+
+function daysBetweenYMD(ymd) {
+  if (!ymd) return "";
+  const assigned = new Date(ymd + "T00:00:00");
+  if (isNaN(assigned)) return "";
+  const now = new Date();
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const utcA = Date.UTC(assigned.getFullYear(), assigned.getMonth(), assigned.getDate());
+  const utcB = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.floor((utcB - utcA) / msPerDay);
+  return String(Math.max(0, diff));
+}
 
 // ==============================================
 // ✅ DOM Ready
@@ -175,7 +208,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 🔹 Supervisor → Limited edit rights
+    // For non-admins, dateassigned is always read-only (rendered as span)
+    // so no need to toggle that here—just make sure inputs that *exist*
+    // get disabled as needed.
+
+    // 🔹 Supervisor → Limited edit rights (5 fields)
     if (user.type === "supervisor") {
       allInputs.forEach(el => (el.disabled = true));
       const editable = [
@@ -204,7 +241,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Add Table Row
+  // ✅ Build the two new cells (dateassigned & days elapsed)
+  // ==============================================
+  function buildAssignedCells(data) {
+    const ymd = toYMD(data.dateassigned);
+
+    // Assigned date cell
+    let assignedCellHTML = "";
+    if (user.type === "admin" || user.type === "admin_user") {
+      assignedCellHTML = `
+        <td class="cell-dateassigned">
+          <input type="date" class="dateassigned-input" value="${ymd || ""}">
+        </td>
+      `;
+    } else {
+      assignedCellHTML = `
+        <td class="cell-dateassigned">
+          <span class="dateassigned-text">${ymd || ""}</span>
+        </td>
+      `;
+    }
+
+    // Days elapsed cell (always read-only)
+    const days = ymd ? daysBetweenYMD(ymd) : "";
+    const daysCellHTML = `<td class="cell-dayselapsed">${days}</td>`;
+
+    return assignedCellHTML + daysCellHTML;
+  }
+
+  // ==============================================
+  // ✅ Add Table Row (HTML structure must match <thead>)
   // ==============================================
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
@@ -233,6 +299,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="No" ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
+
+      ${buildAssignedCells(data)}
+
       <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
@@ -244,11 +313,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       </td>
       <td><input type="text" class="verifyRemarks" value="${data.verifyremarks || ""}" placeholder="Verification notes..."></td>
     `;
+
     tableBody.appendChild(newRow);
     populateUserDropdown(newRow.querySelector(".user_id"), data.user_id);
     linkUserToOrganisation(newRow);
     setAccessByRole(newRow);
   };
+
+  // ==============================================
+  // ✅ Live recompute of days elapsed when admin edits assigned date
+  // ==============================================
+  document.addEventListener("input", (e) => {
+    const el = e.target;
+    if (el.matches(".dateassigned-input")) {
+      const tr = el.closest("tr");
+      const daysCell = tr.querySelector(".cell-dayselapsed");
+      const ymd = el.value || "";
+      daysCell.textContent = ymd ? daysBetweenYMD(ymd) : "";
+    }
+  });
 
   // ==============================================
   // ✅ Load Firestore Data (with filters)
@@ -259,7 +342,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       let q;
 
       if (user.type === "admin" || user.type === "admin_user")
-        q = incidentsRef;
+        q = incidentsRef; // client-side filter next
       else if (user.type === "supervisor")
         q = query(incidentsRef, where("organisation", "==", user.organisation));
       else if (user.type === "monitor")
@@ -325,7 +408,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         row.querySelector(".case_id").value.trim() ||
         `case_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-      incidents.push({
+      // Base record (common)
+      const record = {
         case_id: caseId,
         user_id: row.querySelector(".user_id").value,
         organisation: orgVal,
@@ -337,7 +421,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         verifyremarks: row.querySelector(".verifyRemarks").value,
         updatedBy: user.id,
         updatedAt: new Date().toISOString()
-      });
+      };
+
+      // Admin/Admin_User can save dateassigned
+      if (user.type === "admin" || user.type === "admin_user") {
+        const dateInput = row.querySelector(".dateassigned-input");
+        if (dateInput) {
+          // store ISO yyyy-mm-dd (simple and consistent)
+          record.dateassigned = dateInput.value || null;
+        }
+      }
+
+      incidents.push(record);
     });
 
     if (incidents.length === 0) {
