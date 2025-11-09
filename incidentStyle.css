@@ -7,73 +7,71 @@ body {
   color: #333;
 }
 
-/* ====== HEADER ====== */
+/* ====== HEADER (top bar) ====== */
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: #2b3a67;
   color: white;
-  padding: 12px 20px;
+  padding: 8px 16px;            /* reduced gaps */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 header .user-info {
-  font-size: 15px;
+  font-size: 14px;              /* slightly smaller */
 }
 
 header button {
   background: #f04e4e;
   border: none;
   color: white;
-  padding: 8px 16px;
+  padding: 6px 12px;            /* tighter */
   border-radius: 5px;
   cursor: pointer;
   transition: 0.2s ease-in-out;
 }
 
-header button:hover {
-  background: #8f1010;
-}
+header button:hover { background: #8f1010; }
 
 /* ====== MAIN CONTENT ====== */
 main {
-  padding: 40px 60px;
+  padding: 28px 40px;           /* reduced */
 }
 
 h2 {
   text-align: center;
   color: #2b3a67;
-  margin-bottom: 25px;
+  margin: 12px 0 18px;          /* tighter */
   font-weight: 600;
 }
 
-/* ====== 🔹 FILTER BAR ====== */
+/* ====== FILTER BAR ====== */
 .filter-container {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   background: #ffffff;
-  padding: 12px 18px;
+  padding: 10px 14px;
   border-radius: 8px;
-  margin-bottom: 25px;
+  margin-bottom: 16px;          /* reduced */
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .filter-container label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #2b3a67;
 }
 
 .filter-container select {
-  padding: 8px 12px;
+  padding: 8px 10px;
   border: 1px solid #ccd2da;
   border-radius: 6px;
   background: #f9fafc;
   min-width: 160px;
-  font-size: 14px;
+  font-size: 13px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -87,27 +85,24 @@ h2 {
   background: #2b3a67;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   transition: background 0.3s;
 }
+#applyFilterBtn:hover { background: #3b4d91; }
 
-#applyFilterBtn:hover {
-  background: #3b4d91;
-}
-
-/* ====== TABLE DESIGN ====== */
+/* ====== TABLE WRAPPER & BEHAVIOR ====== */
 table {
-  border-collapse: separate;     /* better for sticky cols borders */
+  border-collapse: separate;     /* works better with sticky cols */
   border-spacing: 0;
   width: 100%;
   background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   border-radius: 10px;
   overflow: hidden;
-  display: block;                /* scroll container */
+  display: block;                /* scrolling container */
   max-height: 70vh;
   overflow-y: auto;
   overflow-x: auto;              /* horizontal scroll when needed */
@@ -116,40 +111,42 @@ table {
   scrollbar-color: #ccd2da #f5f6f8;
 }
 
+/* Keep layout stable so sticky positions align perfectly */
 thead, tbody, tr {
   display: table;
   width: 100%;
-  table-layout: fixed;           /* stable column widths */
+  table-layout: fixed;
 }
 
-/* ====== FIXED HEADER ====== */
+/* ====== FIXED HEADER (row) ====== */
 thead {
   position: sticky;
   top: 0;
   z-index: 20;
 }
 
+/* Header cells */
 thead th {
   background-color: #2b3a67;
-  color: white;
-  font-size: 14px;
+  color: #fff;
+  font-size: 13.5px;
   font-weight: 600;
   text-align: center;
-  padding: 12px 10px;
+  padding: 10px 8px;
   border-bottom: 2px solid #dee2e6;
   white-space: normal;           /* allow wrapping to avoid overlap */
   line-height: 1.25;
   word-break: break-word;
 }
 
-/* ====== TABLE BODY ====== */
+/* ====== BODY CELLS ====== */
 td {
   background-color: #ffffff;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid #e3e6ea;
   vertical-align: middle;
   text-align: center;
-  white-space: normal;           /* allow multi-line in cells */
+  white-space: normal;
 }
 
 tr:hover td {
@@ -157,42 +154,50 @@ tr:hover td {
   transition: background-color 0.2s ease-in-out;
 }
 
-/* ====== STICKY FIRST TWO COLUMNS (always visible) ====== */
-/* Fixed widths so offsets work reliably */
+/* ====== STICKY FIRST TWO COLUMNS (header + body) ====== */
+/* Set explicit widths & left offsets for perfect alignment */
 :root {
-  --col-case-id: 220px;   /* width of column 1 */
-  --col-user-id: 180px;   /* width of column 2 */
+  --col-case-id: 220px;   /* column 1 width */
+  --col-user-id: 180px;   /* column 2 width */
 }
 
-th:nth-child(1),
-td:nth-child(1) {
+/* Column 1 (case_id) */
+thead th:nth-child(1),
+tbody td:nth-child(1) {
   min-width: var(--col-case-id);
   width: var(--col-case-id);
   max-width: var(--col-case-id);
   position: sticky;
   left: 0;
-  z-index: 30; /* above thead bg and other cells */
-  background: #fff; /* maintain white over scroll */
+  z-index: 40;                     /* above other header cells */
+  background: #fff;
 }
 
-th:nth-child(2),
-td:nth-child(2) {
+/* Header color for sticky header cell 1 */
+thead th:nth-child(1) {
+  background-color: #2b3a67;
+  color: #fff;
+  z-index: 50;                     /* above sticky body cell */
+}
+
+/* Column 2 (user_id) */
+thead th:nth-child(2),
+tbody td:nth-child(2) {
   min-width: var(--col-user-id);
   width: var(--col-user-id);
   max-width: var(--col-user-id);
   position: sticky;
-  left: calc(var(--col-case-id));
-  z-index: 29;
+  left: var(--col-case-id);
+  z-index: 39;
   background: #fff;
-  box-shadow: -1px 0 0 #e3e6ea inset; /* subtle divider */
+  box-shadow: -1px 0 0 #e3e6ea inset; /* divider line */
 }
 
-/* Keep sticky header cells styled with header color */
-thead th:nth-child(1),
+/* Header color for sticky header cell 2 */
 thead th:nth-child(2) {
   background-color: #2b3a67;
   color: #fff;
-  z-index: 40;
+  z-index: 49;
 }
 
 /* Inputs inside the first two columns */
@@ -202,18 +207,39 @@ td:nth-child(2) select {
   font-size: 14px;
   width: 100%;
   overflow-wrap: anywhere;
-  white-space: nowrap;  /* keep IDs tidy on one line */
+  white-space: nowrap;  /* keep IDs tidy */
   text-overflow: ellipsis;
 }
 
-/* ====== GENERAL COLUMN MIN-WIDTHS (avoid cramped overlap) ====== */
-th, td {
-  min-width: 120px; /* a sane floor for other columns */
+/* ====== GENERAL MIN-WIDTHS (avoid cramped overlap) ====== */
+th, td { min-width: 120px; }
+
+/* ====== DATE + DAYS ====== */
+.cell-dateassigned { min-width: 160px; white-space: nowrap; }
+.cell-dayselapsed  {
+  min-width: 120px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Specific columns that need narrower/wider tweaks */
-.cell-dateassigned { min-width: 160px; white-space: nowrap; }
-.cell-dayselapsed  { min-width: 120px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cell-dateassigned input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+/* readonly date label (non-admins) */
+.cell-dateassigned .dateassigned-text {
+  display: inline-block;
+  padding: 8px 10px;
+  background: #f6f8fb;
+  border: 1px solid #e1e6ed;
+  border-radius: 5px;
+  min-width: 120px;
+  text-align: left;
+}
 
 /* ====== INPUTS & DROPDOWNS ====== */
 input, select {
@@ -233,7 +259,7 @@ input:focus, select:focus {
   outline: none;
 }
 
-/* ====== CUSTOM SELECT STYLING ====== */
+/* Select arrow */
 select {
   height: 40px;
   appearance: none;
@@ -256,30 +282,11 @@ input:disabled {
   cursor: not-allowed;
 }
 
-/* ====== DATE INPUT (assigned date) ====== */
-.cell-dateassigned input[type="date"] {
-  width: 100%;
-  padding: 8px 10px;
-  height: 40px;
-  box-sizing: border-box;
-}
-
-/* Optional: read-only date appearance for non-admins */
-.cell-dateassigned .dateassigned-text {
-  display: inline-block;
-  padding: 8px 10px;
-  background: #f6f8fb;
-  border: 1px solid #e1e6ed;
-  border-radius: 5px;
-  min-width: 120px;
-  text-align: left;
-}
-
 /* ====== SUBMIT BUTTON ====== */
 #submitBtn {
   display: block;
   width: 220px;
-  margin: 25px auto;
+  margin: 18px auto;             /* reduced */
   background-color: #2b3a67;
   color: white;
   border: none;
@@ -290,56 +297,40 @@ input:disabled {
   cursor: pointer;
   transition: background-color 0.3s, transform 0.1s;
 }
+#submitBtn:hover { background-color: #3b4d91; transform: translateY(-1px); }
 
-#submitBtn:hover {
-  background-color: #3b4d91;
-  transform: translateY(-1px);
-}
+/* ====== STATUS MESSAGE ====== */
+#message { text-align: center; font-weight: 500; margin-top: 8px; }
 
-/* ====== SUCCESS MESSAGE ====== */
-#message {
-  text-align: center;
-  font-weight: 500;
-  margin-top: 10px;
-}
-
-/* ====== RESPONSIVE: TABLE & CONTROLS ====== */
+/* ====== RESPONSIVE ====== */
 @media (max-width: 992px) {
-  main { padding: 28px 30px; }
-  thead th, td { padding: 10px 8px; }
-  input, select { padding: 8px 10px; }
-  .filter-container { gap: 12px; }
+  main { padding: 22px 24px; }
+  thead th, td { padding: 8px 6px; }
+  .filter-container { gap: 10px; }
 }
 
 @media (max-width: 768px) {
-  main { padding: 20px; }
   table { font-size: 13px; max-height: 60vh; }
   input, select { font-size: 13px; padding: 8px 10px; height: 38px; }
   .cell-dateassigned input[type="date"] { height: 38px; }
   #submitBtn { width: 100%; }
-  .filter-container { flex-direction: column; align-items: stretch; gap: 10px; }
+  .filter-container { flex-direction: column; align-items: stretch; gap: 8px; }
   .filter-container select { width: 100%; min-width: 0; }
 }
 
-/* Hide non-critical columns on very small screens to keep rows readable
-   Column order:
+/* Hide non-critical columns on very small screens:
    1 case_id, 2 user_id, 3 organisation, 4 below18, 5 violence, 6 armed group,
    7 assigned date, 8 days elapsed, 9 incident remarks, 10 verification status, 11 verification remarks
 */
 @media (max-width: 600px) {
   th:nth-child(3), td:nth-child(3) { display: none; }    /* organisation */
   th:nth-child(11), td:nth-child(11) { display: none; }  /* verification remarks */
-  thead th, td { padding: 8px 6px; }
-  header { padding: 10px 14px; }
-  header .user-info { font-size: 14px; }
-  #submitBtn { margin-top: 18px; }
 }
 
 @media (max-width: 480px) {
   th:nth-child(9), td:nth-child(9) { display: none; }    /* incident remarks */
-  thead th, td { padding: 8px 6px; font-size: 12.5px; }
+  thead th, td { font-size: 12.5px; }
   input, select { font-size: 12.5px; height: 36px; padding: 7px 9px; }
   .cell-dateassigned input[type="date"] { height: 36px; }
-  .filter-container { padding: 10px 12px; }
-  h2 { font-size: 20px; margin-bottom: 18px; }
+  h2 { font-size: 20px; margin-bottom: 14px; }
 }
