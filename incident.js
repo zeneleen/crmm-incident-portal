@@ -22,7 +22,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // ==============================================
-//
 // ✅ Firebase Configuration
 // ==============================================
 const firebaseConfig = {
@@ -42,12 +41,10 @@ const db = getFirestore(app);
 // ==============================================
 function toYMD(dateVal) {
   if (!dateVal) return "";
-  // Firestore Timestamp-like object?
   if (dateVal && typeof dateVal.toDate === "function") {
     const d = dateVal.toDate();
     return d.toISOString().slice(0, 10);
   }
-  // String / Date
   try {
     const d = new Date(dateVal);
     if (isNaN(d)) return "";
@@ -160,8 +157,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
-    let availableUsers = users;
 
+    // Placeholder "--"
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "--";
+    placeholder.disabled = true;
+    if (!preselectedUserId) placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    let availableUsers = users;
     if (user.type === "supervisor")
       availableUsers = users.filter(u => u.organisation === user.organisation);
     else if (user.type === "monitor")
@@ -170,14 +175,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const allowedOrgs = ["SCI", "IRC", "UNICEF"];
       availableUsers = users.filter(u => allowedOrgs.includes(u.organisation));
     }
-
-    // Placeholder
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Select";
-    placeholder.disabled = true;
-    if (!preselectedUserId) placeholder.selected = true;
-    select.appendChild(placeholder);
 
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
@@ -210,13 +207,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setAccessByRole = (row) => {
     const allInputs = row.querySelectorAll("input, select");
 
-    // 🔹 Admin / Admin_User → Full access
+    // Admin / Admin_User → Full access
     if (user.type === "admin" || user.type === "admin_user") {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
 
-    // 🔹 Supervisor → Limited edit rights (5 fields)
+    // Supervisor → Limited edit rights (5 fields)
     if (user.type === "supervisor") {
       allInputs.forEach(el => (el.disabled = true));
       const editable = [
@@ -233,7 +230,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 🔹 Monitor → Only 3 editable
+    // Monitor → Only 3 editable
     if (user.type === "monitor") {
       allInputs.forEach(el => (el.disabled = true));
       const editable = [".below18", ".violence", ".armedGroup"];
@@ -266,7 +263,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       `;
     }
 
-    // Days elapsed cell (always read-only)
+    // Days elapsed cell (read-only)
     const days = ymd ? daysBetweenYMD(ymd) : "";
     const daysCellHTML = `<td class="cell-dayselapsed">${days}</td>`;
 
@@ -274,7 +271,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ==============================================
-  // ✅ Add Table Row (HTML structure must match <thead>)
+  // ✅ Add Table Row (must match <thead> order)
   // ==============================================
   const addNewRow = (data = {}) => {
     const newRow = document.createElement("tr");
@@ -284,21 +281,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="organisation" value="${data.organisation || ""}" disabled></td>
       <td>
         <select class="below18">
-          <option value="" ${!data.below18 ? "selected" : ""} disabled>Select</option>
+          <option value="" ${!data.below18 ? "selected" : ""} disabled>--</option>
           <option value="Yes" ${data.below18 === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.below18 === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="violence">
-          <option value="" ${!data.violence ? "selected" : ""} disabled>Select</option>
+          <option value="" ${!data.violence ? "selected" : ""} disabled>--</option>
           <option value="Yes" ${data.violence === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.violence === "No" ? "selected" : ""}>No</option>
         </select>
       </td>
       <td>
         <select class="armedGroup">
-          <option value="" ${!data.armedgroup ? "selected" : ""} disabled>Select</option>
+          <option value="" ${!data.armedgroup ? "selected" : ""} disabled>--</option>
           <option value="Yes" ${data.armedgroup === "Yes" ? "selected" : ""}>Yes</option>
           <option value="No" ${data.armedgroup === "No" ? "selected" : ""}>No</option>
         </select>
@@ -309,7 +306,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <td><input type="text" class="incidentRemarks" value="${data.incidentremarks || ""}" placeholder="Remarks..."></td>
       <td>
         <select class="verifyStatus">
-          <option value="" ${!data.verifystatus ? "selected" : ""} disabled>Select</option>
+          <option value="" ${!data.verifystatus ? "selected" : ""} disabled>--</option>
           <option value="Verified" ${data.verifystatus === "Verified" ? "selected" : ""}>Verified</option>
           <option value="Confirmed (to a reasonable level)" ${data.verifystatus === "Confirmed (to a reasonable level)" ? "selected" : ""}>
             Confirmed (to a reasonable level)
@@ -327,7 +324,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
-  // ✅ Live recompute of days elapsed when admin edits assigned date
+  // ✅ Live recompute of days elapsed on date edit
   // ==============================================
   document.addEventListener("input", (e) => {
     const el = e.target;
@@ -348,7 +345,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       let q;
 
       if (user.type === "admin" || user.type === "admin_user")
-        q = incidentsRef; // client-side filter next
+        q = incidentsRef;
       else if (user.type === "supervisor")
         q = query(incidentsRef, where("organisation", "==", user.organisation));
       else if (user.type === "monitor")
@@ -363,7 +360,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
 
-        // ✅ Apply client-side filters
+        // Client-side filters for admin/admin_user and supervisor’s user filter
         if (user.type === "admin" || user.type === "admin_user") {
           if (orgSelected && data.organisation !== orgSelected) return;
           if (userSelected && data.user_id !== userSelected) return;
@@ -414,7 +411,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         row.querySelector(".case_id").value.trim() ||
         `case_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-      // Base record (common)
       const record = {
         case_id: caseId,
         user_id: row.querySelector(".user_id").value,
@@ -433,8 +429,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (user.type === "admin" || user.type === "admin_user") {
         const dateInput = row.querySelector(".dateassigned-input");
         if (dateInput) {
-          // store ISO yyyy-mm-dd (simple and consistent)
-          record.dateassigned = dateInput.value || null;
+          record.dateassigned = dateInput.value || null; // ISO yyyy-mm-dd
         }
       }
 
