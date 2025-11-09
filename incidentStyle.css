@@ -14,35 +14,27 @@ header {
   align-items: center;
   background-color: #2b3a67;
   color: white;
-  padding: 8px 16px;            /* reduced gaps */
+  padding: 8px 16px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
-header .user-info {
-  font-size: 14px;              /* slightly smaller */
-}
-
+header .user-info { font-size: 14px; }
 header button {
   background: #f04e4e;
   border: none;
   color: white;
-  padding: 6px 12px;            /* tighter */
+  padding: 6px 12px;
   border-radius: 5px;
   cursor: pointer;
   transition: 0.2s ease-in-out;
 }
-
 header button:hover { background: #8f1010; }
 
 /* ====== MAIN CONTENT ====== */
-main {
-  padding: 28px 40px;           /* reduced */
-}
-
+main { padding: 28px 40px; }
 h2 {
   text-align: center;
   color: #2b3a67;
-  margin: 12px 0 18px;          /* tighter */
+  margin: 12px 0 18px;
   font-weight: 600;
 }
 
@@ -55,16 +47,14 @@ h2 {
   background: #ffffff;
   padding: 10px 14px;
   border-radius: 8px;
-  margin-bottom: 16px;          /* reduced */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
-
 .filter-container label {
   font-size: 13px;
   font-weight: 600;
   color: #2b3a67;
 }
-
 .filter-container select {
   padding: 8px 10px;
   border: 1px solid #ccd2da;
@@ -74,13 +64,11 @@ h2 {
   font-size: 13px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 .filter-container select:focus {
   border-color: #1cabe2;
-  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
+  box-shadow: 0 0 4px rgba(28,171,226,0.3);
   outline: none;
 }
-
 #applyFilterBtn {
   background: #2b3a67;
   color: white;
@@ -93,19 +81,19 @@ h2 {
 }
 #applyFilterBtn:hover { background: #3b4d91; }
 
-/* ====== TABLE WRAPPER & BEHAVIOR ====== */
+/* ====== TABLE WRAPPER ====== */
 table {
-  border-collapse: separate;     /* works better with sticky cols */
+  border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  background-color: white;
+  background: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   border-radius: 10px;
   overflow: hidden;
   display: block;                /* scrolling container */
   max-height: 70vh;
   overflow-y: auto;
-  overflow-x: auto;              /* horizontal scroll when needed */
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #ccd2da #f5f6f8;
@@ -118,15 +106,14 @@ thead, tbody, tr {
   table-layout: fixed;
 }
 
-/* ====== FIXED HEADER (row) ====== */
+/* ====== STATIONARY/STICKY HEADER (entire row) ====== */
 thead {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 30; /* above body cells */
 }
-
-/* Header cells */
 thead th {
+  /* NOTE: no left/position sticky here for individual header cells */
   background-color: #2b3a67;
   color: #fff;
   font-size: 13.5px;
@@ -134,84 +121,78 @@ thead th {
   text-align: center;
   padding: 10px 8px;
   border-bottom: 2px solid #dee2e6;
-  white-space: normal;           /* allow wrapping to avoid overlap */
+  white-space: normal;     /* prevent overlap */
   line-height: 1.25;
   word-break: break-word;
 }
 
 /* ====== BODY CELLS ====== */
 td {
-  background-color: #ffffff;
+  background: #fff;
   padding: 8px;
   border: 1px solid #e3e6ea;
   vertical-align: middle;
   text-align: center;
   white-space: normal;
 }
-
 tr:hover td {
   background-color: #e8f5fb;
   transition: background-color 0.2s ease-in-out;
 }
 
-/* ====== STICKY FIRST TWO COLUMNS (header + body) ====== */
-/* Set explicit widths & left offsets for perfect alignment */
+/* ====== FREEZE FIRST TWO BODY COLUMNS ONLY ====== */
 :root {
-  --col-case-id: 220px;   /* column 1 width */
-  --col-user-id: 180px;   /* column 2 width */
+  --col-case-id: 220px;  /* adjust if needed */
+  --col-user-id: 180px;
 }
 
-/* Column 1 (case_id) */
-thead th:nth-child(1),
+/* Column 1 (case_id) — BODY ONLY */
 tbody td:nth-child(1) {
   min-width: var(--col-case-id);
   width: var(--col-case-id);
   max-width: var(--col-case-id);
   position: sticky;
   left: 0;
-  z-index: 40;                     /* above other header cells */
+  z-index: 25;
   background: #fff;
 }
 
-/* Header color for sticky header cell 1 */
-thead th:nth-child(1) {
-  background-color: #2b3a67;
-  color: #fff;
-  z-index: 50;                     /* above sticky body cell */
-}
-
-/* Column 2 (user_id) */
-thead th:nth-child(2),
+/* Column 2 (user_id) — BODY ONLY */
 tbody td:nth-child(2) {
   min-width: var(--col-user-id);
   width: var(--col-user-id);
   max-width: var(--col-user-id);
   position: sticky;
   left: var(--col-case-id);
-  z-index: 39;
+  z-index: 24;
   background: #fff;
-  box-shadow: -1px 0 0 #e3e6ea inset; /* divider line */
+  box-shadow: -1px 0 0 #e3e6ea inset; /* vertical divider */
 }
 
-/* Header color for sticky header cell 2 */
+/* Header widths for first two columns (to align grid) */
+thead th:nth-child(1) {
+  min-width: var(--col-case-id);
+  width: var(--col-case-id);
+  max-width: var(--col-case-id);
+}
 thead th:nth-child(2) {
-  background-color: #2b3a67;
-  color: #fff;
-  z-index: 49;
+  min-width: var(--col-user-id);
+  width: var(--col-user-id);
+  max-width: var(--col-user-id);
 }
 
-/* Inputs inside the first two columns */
+/* Inputs in first two columns */
 td:nth-child(1) input,
 td:nth-child(2) select {
   font-family: monospace;
   font-size: 14px;
   width: 100%;
   overflow-wrap: anywhere;
-  white-space: nowrap;  /* keep IDs tidy */
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-/* ====== GENERAL MIN-WIDTHS (avoid cramped overlap) ====== */
+/* ====== GENERAL MIN-WIDTHS ====== */
 th, td { min-width: 120px; }
 
 /* ====== DATE + DAYS ====== */
@@ -222,15 +203,12 @@ th, td { min-width: 120px; }
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-
 .cell-dateassigned input[type="date"] {
   width: 100%;
   padding: 8px 10px;
   height: 40px;
   box-sizing: border-box;
 }
-
-/* readonly date label (non-admins) */
 .cell-dateassigned .dateassigned-text {
   display: inline-block;
   padding: 8px 10px;
@@ -247,15 +225,14 @@ input, select {
   padding: 10px 12px;
   border: 1px solid #cbd3da;
   border-radius: 5px;
-  background-color: #f9fafc;
+  background: #f9fafc;
   font-size: 14px;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 input:focus, select:focus {
   border-color: #1cabe2;
-  box-shadow: 0 0 4px rgba(28, 171, 226, 0.3);
+  box-shadow: 0 0 4px rgba(28,171,226,0.3);
   outline: none;
 }
 
@@ -270,12 +247,10 @@ select {
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
-
 select.user_id {
   padding-right: 36px;
   background-position: right 14px center, right 8px center;
 }
-
 input:disabled {
   background: #e9ecf0;
   color: #555;
@@ -286,7 +261,7 @@ input:disabled {
 #submitBtn {
   display: block;
   width: 220px;
-  margin: 18px auto;             /* reduced */
+  margin: 18px auto;
   background-color: #2b3a67;
   color: white;
   border: none;
