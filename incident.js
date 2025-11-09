@@ -4,8 +4,8 @@
  * Admin → 2 filters: Organisation + User (full edit)
  * Admin_User → same as Admin but limited to SCI, IRC, UNICEF
  * Supervisor → 1 filter: User (own org only), can edit 5 fields
- * Monitor → No filters, can edit & submit 3 fields:
- *           below18, violence, armedgroup
+ * Monitor → No filters, can edit & submit 4 fields:
+ *           below18, violence, armedgroup, incidentremarks
  ***************************************************/
 
 // ==============================================
@@ -219,10 +219,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Monitor → ONLY 3 editable (and submit only those)
+    // Monitor → can edit 4 fields (added incidentRemarks)
     if (user.type === "monitor") {
       allInputs.forEach(el => (el.disabled = true));
-      [".below18", ".violence", ".armedGroup"].forEach(cls => {
+      [".below18", ".violence", ".armedGroup", ".incidentRemarks"].forEach(cls => {
         const el = row.querySelector(cls);
         if (el) el.disabled = false;
       });
@@ -374,7 +374,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Everyone except monitors/supervisors/admins blocked? (No—monitors allowed now)
     if (!["admin", "admin_user", "supervisor", "monitor"].includes(user.type)) {
       alert("You don’t have permission to save data.");
       return;
@@ -394,17 +393,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         row.querySelector(".case_id").value.trim() ||
         `case_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-      // Build a payload according to role
       let record = { case_id: caseId, updatedBy: user.id, updatedAt: new Date().toISOString() };
 
       if (user.type === "monitor") {
-        // 🚫 Monitors only send 3 fields
-        record.below18   = row.querySelector(".below18").value;
-        record.violence  = row.querySelector(".violence").value;
-        record.armedgroup= row.querySelector(".armedGroup").value;
+        // Monitors can submit 4 fields now (added incidentremarks)
+        record.below18         = row.querySelector(".below18").value;
+        record.violence        = row.querySelector(".violence").value;
+        record.armedgroup      = row.querySelector(".armedGroup").value;
+        record.incidentremarks = row.querySelector(".incidentRemarks").value;
 
       } else if (user.type === "supervisor") {
-        // Supervisors can modify 5 fields (+ keep identifiers)
         record.user_id          = row.querySelector(".user_id").value;
         record.organisation     = row.querySelector(".organisation").value.trim();
         record.below18          = row.querySelector(".below18").value;
@@ -413,7 +411,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         record.incidentremarks  = row.querySelector(".incidentRemarks").value;
 
       } else if (user.type === "admin" || user.type === "admin_user") {
-        // Admin/Admin_User full edit
         const orgVal = row.querySelector(".organisation").value.trim();
         if (user.type === "admin_user" && !allowedOrgs.includes(orgVal)) return;
 
