@@ -113,7 +113,7 @@ thead {
   z-index: 30; /* above body cells */
 }
 thead th {
-  /* NOTE: no left/position sticky here for individual header cells */
+  /* header cells stick as a single bar only (no left stickiness) */
   background-color: #2b3a67;
   color: #fff;
   font-size: 13.5px;
@@ -196,27 +196,46 @@ td:nth-child(2) select {
 th, td { min-width: 120px; }
 
 /* ====== DATE + DAYS ====== */
-.cell-dateassigned { min-width: 160px; white-space: nowrap; }
+.cell-dateassigned { 
+  min-width: 160px; 
+  white-space: nowrap;
+}
+
+/* Admin/editor view (native date input) */
+.cell-dateassigned input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  height: 40px;
+  line-height: 24px;
+  box-sizing: border-box;
+}
+
+/* Supervisor/Monitor view (read-only span) — FIX SPILLING */
+.cell-dateassigned .dateassigned-text {
+  display: block;
+  height: 40px;                 /* match input/select height */
+  line-height: 40px;            /* vertical centering */
+  padding: 0 10px;
+  background: #f6f8fb;
+  border: 1px solid #e1e6ed;
+  border-radius: 5px;
+  text-align: left;
+
+  /* prevent wrap & spill */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  /* ensure it never exceeds the cell */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .cell-dayselapsed  {
   min-width: 120px;
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-}
-.cell-dateassigned input[type="date"] {
-  width: 100%;
-  padding: 8px 10px;
-  height: 40px;
-  box-sizing: border-box;
-}
-.cell-dateassigned .dateassigned-text {
-  display: inline-block;
-  padding: 8px 10px;
-  background: #f6f8fb;
-  border: 1px solid #e1e6ed;
-  border-radius: 5px;
-  min-width: 120px;
-  text-align: left;
 }
 
 /* ====== INPUTS & DROPDOWNS ====== */
@@ -225,7 +244,7 @@ input, select {
   padding: 10px 12px;
   border: 1px solid #cbd3da;
   border-radius: 5px;
-  background: #f9fafc;
+  background-color: #f9fafc;
   font-size: 14px;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -288,6 +307,7 @@ input:disabled {
   table { font-size: 13px; max-height: 60vh; }
   input, select { font-size: 13px; padding: 8px 10px; height: 38px; }
   .cell-dateassigned input[type="date"] { height: 38px; }
+  .cell-dateassigned .dateassigned-text { height: 38px; line-height: 38px; }
   #submitBtn { width: 100%; }
   .filter-container { flex-direction: column; align-items: stretch; gap: 8px; }
   .filter-container select { width: 100%; min-width: 0; }
@@ -307,5 +327,6 @@ input:disabled {
   thead th, td { font-size: 12.5px; }
   input, select { font-size: 12.5px; height: 36px; padding: 7px 9px; }
   .cell-dateassigned input[type="date"] { height: 36px; }
+  .cell-dateassigned .dateassigned-text { height: 36px; line-height: 36px; }
   h2 { font-size: 20px; margin-bottom: 14px; }
 }
