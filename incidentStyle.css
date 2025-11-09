@@ -100,36 +100,33 @@ h2 {
 
 /* ====== TABLE DESIGN ====== */
 table {
-  border-collapse: collapse;
+  border-collapse: separate;     /* better for sticky cols borders */
+  border-spacing: 0;
   width: 100%;
   background-color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   border-radius: 10px;
   overflow: hidden;
-  display: block;               /* allow scrolling container */
+  display: block;                /* scroll container */
   max-height: 70vh;
   overflow-y: auto;
+  overflow-x: auto;              /* horizontal scroll when needed */
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #ccd2da #f5f6f8;
-  table-layout: auto;
 }
 
-/* Enable horizontal scroll on narrow screens without breaking layout */
-table {
-  overflow-x: auto;
-  white-space: nowrap;          /* prevent ugly wraps in cells */
-}
 thead, tbody, tr {
   display: table;
   width: 100%;
-  table-layout: fixed;          /* stable column widths */
+  table-layout: fixed;           /* stable column widths */
 }
 
 /* ====== FIXED HEADER ====== */
 thead {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
 }
 
 thead th {
@@ -140,6 +137,9 @@ thead th {
   text-align: center;
   padding: 12px 10px;
   border-bottom: 2px solid #dee2e6;
+  white-space: normal;           /* allow wrapping to avoid overlap */
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 /* ====== TABLE BODY ====== */
@@ -149,7 +149,7 @@ td {
   border: 1px solid #e3e6ea;
   vertical-align: middle;
   text-align: center;
-  white-space: normal;          /* allow multi-line where possible */
+  white-space: normal;           /* allow multi-line in cells */
 }
 
 tr:hover td {
@@ -157,24 +157,63 @@ tr:hover td {
   transition: background-color 0.2s ease-in-out;
 }
 
-/* ====== COLUMN WIDTHS ====== */
-td:nth-child(1),
-th:nth-child(1),
-td:nth-child(2),
-th:nth-child(2) {
-  min-width: 180px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: visible;
+/* ====== STICKY FIRST TWO COLUMNS (always visible) ====== */
+/* Fixed widths so offsets work reliably */
+:root {
+  --col-case-id: 220px;   /* width of column 1 */
+  --col-user-id: 180px;   /* width of column 2 */
 }
 
+th:nth-child(1),
+td:nth-child(1) {
+  min-width: var(--col-case-id);
+  width: var(--col-case-id);
+  max-width: var(--col-case-id);
+  position: sticky;
+  left: 0;
+  z-index: 30; /* above thead bg and other cells */
+  background: #fff; /* maintain white over scroll */
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  min-width: var(--col-user-id);
+  width: var(--col-user-id);
+  max-width: var(--col-user-id);
+  position: sticky;
+  left: calc(var(--col-case-id));
+  z-index: 29;
+  background: #fff;
+  box-shadow: -1px 0 0 #e3e6ea inset; /* subtle divider */
+}
+
+/* Keep sticky header cells styled with header color */
+thead th:nth-child(1),
+thead th:nth-child(2) {
+  background-color: #2b3a67;
+  color: #fff;
+  z-index: 40;
+}
+
+/* Inputs inside the first two columns */
 td:nth-child(1) input,
 td:nth-child(2) select {
   font-family: monospace;
   font-size: 14px;
   width: 100%;
   overflow-wrap: anywhere;
+  white-space: nowrap;  /* keep IDs tidy on one line */
+  text-overflow: ellipsis;
 }
+
+/* ====== GENERAL COLUMN MIN-WIDTHS (avoid cramped overlap) ====== */
+th, td {
+  min-width: 120px; /* a sane floor for other columns */
+}
+
+/* Specific columns that need narrower/wider tweaks */
+.cell-dateassigned { min-width: 160px; white-space: nowrap; }
+.cell-dayselapsed  { min-width: 120px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* ====== INPUTS & DROPDOWNS ====== */
 input, select {
@@ -198,8 +237,9 @@ input:focus, select:focus {
 select {
   height: 40px;
   appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
-                    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-image:
+    linear-gradient(45deg, transparent 50%, #555 50%),
+    linear-gradient(135deg, #555 50%, transparent 50%);
   background-position: calc(100% - 18px) center, calc(100% - 12px) center;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
@@ -214,6 +254,25 @@ input:disabled {
   background: #e9ecf0;
   color: #555;
   cursor: not-allowed;
+}
+
+/* ====== DATE INPUT (assigned date) ====== */
+.cell-dateassigned input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+/* Optional: read-only date appearance for non-admins */
+.cell-dateassigned .dateassigned-text {
+  display: inline-block;
+  padding: 8px 10px;
+  background: #f6f8fb;
+  border: 1px solid #e1e6ed;
+  border-radius: 5px;
+  min-width: 120px;
+  text-align: left;
 }
 
 /* ====== SUBMIT BUTTON ====== */
@@ -244,137 +303,43 @@ input:disabled {
   margin-top: 10px;
 }
 
-/* ====== NEW: Assigned date & Days elapsed ====== */
-.cell-dateassigned {
-  min-width: 160px;
-  white-space: nowrap;
-}
-
-.cell-dateassigned input[type="date"] {
-  width: 100%;
-  padding: 8px 10px;
-  height: 40px; /* match selects */
-  box-sizing: border-box;
-}
-
-.cell-dayselapsed {
-  min-width: 120px;
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Optional: visually differentiate read-only date text for non-admins */
-.cell-dateassigned .dateassigned-text {
-  display: inline-block;
-  padding: 8px 10px;
-  background: #f6f8fb;
-  border: 1px solid #e1e6ed;
-  border-radius: 5px;
-  min-width: 120px;
-  text-align: left;
-}
-
 /* ====== RESPONSIVE: TABLE & CONTROLS ====== */
 @media (max-width: 992px) {
-  main {
-    padding: 28px 30px;
-  }
-  thead th, td {
-    padding: 10px 8px;
-  }
-  input, select {
-    padding: 8px 10px;
-  }
-  .filter-container {
-    gap: 12px;
-  }
+  main { padding: 28px 30px; }
+  thead th, td { padding: 10px 8px; }
+  input, select { padding: 8px 10px; }
+  .filter-container { gap: 12px; }
 }
 
 @media (max-width: 768px) {
-  main {
-    padding: 20px;
-  }
-  table {
-    font-size: 13px;
-    max-height: 60vh;
-  }
-  input, select {
-    font-size: 13px;
-    padding: 8px 10px;
-    height: 38px;
-  }
-  .cell-dateassigned input[type="date"] {
-    height: 38px;
-  }
-  #submitBtn {
-    width: 100%;
-  }
-  .filter-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  .filter-container select {
-    width: 100%;
-    min-width: 0;
-  }
-
-  /* Make wide tables scroll horizontally on mobile */
-  table {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  main { padding: 20px; }
+  table { font-size: 13px; max-height: 60vh; }
+  input, select { font-size: 13px; padding: 8px 10px; height: 38px; }
+  .cell-dateassigned input[type="date"] { height: 38px; }
+  #submitBtn { width: 100%; }
+  .filter-container { flex-direction: column; align-items: stretch; gap: 10px; }
+  .filter-container select { width: 100%; min-width: 0; }
 }
 
-/* Hide non-critical columns on very small screens to keep rows readable */
-/* Column order:
+/* Hide non-critical columns on very small screens to keep rows readable
+   Column order:
    1 case_id, 2 user_id, 3 organisation, 4 below18, 5 violence, 6 armed group,
    7 assigned date, 8 days elapsed, 9 incident remarks, 10 verification status, 11 verification remarks
 */
 @media (max-width: 600px) {
-  th:nth-child(3), td:nth-child(3) { /* organisation */
-    display: none;
-  }
-  th:nth-child(11), td:nth-child(11) { /* verification remarks */
-    display: none;
-  }
-  thead th, td {
-    padding: 8px 6px;
-  }
-  header {
-    padding: 10px 14px;
-  }
-  header .user-info {
-    font-size: 14px;
-  }
-  #submitBtn {
-    margin-top: 18px;
-  }
+  th:nth-child(3), td:nth-child(3) { display: none; }    /* organisation */
+  th:nth-child(11), td:nth-child(11) { display: none; }  /* verification remarks */
+  thead th, td { padding: 8px 6px; }
+  header { padding: 10px 14px; }
+  header .user-info { font-size: 14px; }
+  #submitBtn { margin-top: 18px; }
 }
 
 @media (max-width: 480px) {
-  /* additionally hide incident remarks to simplify */
-  th:nth-child(9), td:nth-child(9) { /* incident remarks */
-    display: none;
-  }
-  thead th, td {
-    padding: 8px 6px;
-    font-size: 12.5px;
-  }
-  input, select {
-    font-size: 12.5px;
-    height: 36px;
-    padding: 7px 9px;
-  }
-  .cell-dateassigned input[type="date"] {
-    height: 36px;
-  }
-  .filter-container {
-    padding: 10px 12px;
-  }
-  h2 {
-    font-size: 20px;
-    margin-bottom: 18px;
-  }
+  th:nth-child(9), td:nth-child(9) { display: none; }    /* incident remarks */
+  thead th, td { padding: 8px 6px; font-size: 12.5px; }
+  input, select { font-size: 12.5px; height: 36px; padding: 7px 9px; }
+  .cell-dateassigned input[type="date"] { height: 36px; }
+  .filter-container { padding: 10px 12px; }
+  h2 { font-size: 20px; margin-bottom: 18px; }
 }
