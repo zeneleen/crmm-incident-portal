@@ -106,12 +106,23 @@ table {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   border-radius: 10px;
   overflow: hidden;
-  display: block;
+  display: block;               /* allow scrolling container */
   max-height: 70vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #ccd2da #f5f6f8;
   table-layout: auto;
+}
+
+/* Enable horizontal scroll on narrow screens without breaking layout */
+table {
+  overflow-x: auto;
+  white-space: nowrap;          /* prevent ugly wraps in cells */
+}
+thead, tbody, tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;          /* stable column widths */
 }
 
 /* ====== FIXED HEADER ====== */
@@ -138,6 +149,7 @@ td {
   border: 1px solid #e3e6ea;
   vertical-align: middle;
   text-align: center;
+  white-space: normal;          /* allow multi-line where possible */
 }
 
 tr:hover td {
@@ -263,33 +275,106 @@ input:disabled {
   text-align: left;
 }
 
-/* ====== SMALL SCREEN RESPONSIVE ====== */
+/* ====== RESPONSIVE: TABLE & CONTROLS ====== */
+@media (max-width: 992px) {
+  main {
+    padding: 28px 30px;
+  }
+  thead th, td {
+    padding: 10px 8px;
+  }
+  input, select {
+    padding: 8px 10px;
+  }
+  .filter-container {
+    gap: 12px;
+  }
+}
+
 @media (max-width: 768px) {
   main {
     padding: 20px;
   }
-
   table {
     font-size: 13px;
     max-height: 60vh;
   }
-
   input, select {
     font-size: 13px;
     padding: 8px 10px;
+    height: 38px;
   }
-
+  .cell-dateassigned input[type="date"] {
+    height: 38px;
+  }
   #submitBtn {
     width: 100%;
   }
-
   .filter-container {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 10px;
   }
-
   .filter-container select {
     width: 100%;
+    min-width: 0;
+  }
+
+  /* Make wide tables scroll horizontally on mobile */
+  table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Hide non-critical columns on very small screens to keep rows readable */
+/* Column order:
+   1 case_id, 2 user_id, 3 organisation, 4 below18, 5 violence, 6 armed group,
+   7 assigned date, 8 days elapsed, 9 incident remarks, 10 verification status, 11 verification remarks
+*/
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3) { /* organisation */
+    display: none;
+  }
+  th:nth-child(11), td:nth-child(11) { /* verification remarks */
+    display: none;
+  }
+  thead th, td {
+    padding: 8px 6px;
+  }
+  header {
+    padding: 10px 14px;
+  }
+  header .user-info {
+    font-size: 14px;
+  }
+  #submitBtn {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* additionally hide incident remarks to simplify */
+  th:nth-child(9), td:nth-child(9) { /* incident remarks */
+    display: none;
+  }
+  thead th, td {
+    padding: 8px 6px;
+    font-size: 12.5px;
+  }
+  input, select {
+    font-size: 12.5px;
+    height: 36px;
+    padding: 7px 9px;
+  }
+  .cell-dateassigned input[type="date"] {
+    height: 36px;
+  }
+  .filter-container {
+    padding: 10px 12px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-bottom: 18px;
   }
 }
