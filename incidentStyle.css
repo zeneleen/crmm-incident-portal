@@ -232,6 +232,37 @@ input:disabled {
   margin-top: 10px;
 }
 
+/* ====== NEW: Assigned date & Days elapsed ====== */
+.cell-dateassigned {
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+.cell-dateassigned input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  height: 40px; /* match selects */
+  box-sizing: border-box;
+}
+
+.cell-dayselapsed {
+  min-width: 120px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Optional: visually differentiate read-only date text for non-admins */
+.cell-dateassigned .dateassigned-text {
+  display: inline-block;
+  padding: 8px 10px;
+  background: #f6f8fb;
+  border: 1px solid #e1e6ed;
+  border-radius: 5px;
+  min-width: 120px;
+  text-align: left;
+}
+
 /* ====== SMALL SCREEN RESPONSIVE ====== */
 @media (max-width: 768px) {
   main {
