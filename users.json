@@ -1,15 +1,21 @@
 [
   {
-    "id": "janilin",
+    "id": "zen",
     "password": "Unicef123",
     "type": "admin",
-    "organisation": "UNICEF"
+    "organisation": "HON"
   },
   {
     "id": "etu",
     "password": "Honey171922",
     "type": "admin",
-    "organisation": "Babie"
+    "organisation": "HON"
+  },
+  {
+    "id": "janilin",
+    "password": "Unicef123",
+    "type": "admin_user",
+    "organisation": "UNICEF"
   },
   {
     "id": "patrick",
