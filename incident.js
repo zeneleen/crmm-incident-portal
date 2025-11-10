@@ -96,57 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const response = await fetch("users.json");
   const users = await response.json();
 
-  // ==============================================
-  // ✅ FILTER SETUP (ADMIN / ADMIN_USER)
-  // ==============================================
-  if (["admin", "admin_user"].includes(user.type)) {
-    filterContainer.style.display = "flex";
-    orgFilterGroup.style.display = "block";
-    userFilterGroup.style.display = "block";
-
-    const allowedOrgs = user.type === "admin"
-      ? [...new Set(users.map(u => u.organisation))]
-      : ["SCI", "IRC", "UNICEF"];
-    const allowedUsers = users.filter(u => allowedOrgs.includes(u.organisation));
-
-    // Populate both filters initially
-    populateOrgs(allowedOrgs);
-    populateUsers(allowedUsers);
-
-    // Organisation filter → limits user list
-    orgFilter.addEventListener("change", () => {
-      const selectedOrg = orgFilter.value;
-      if (!selectedOrg) {
-        populateUsers(allowedUsers);
-        return;
-      }
-      const filteredUsers = allowedUsers.filter(u => u.organisation === selectedOrg);
-      populateUsers(filteredUsers);
-    });
-
-    // User filter → limits organisation list
-    userFilter.addEventListener("change", () => {
-      const selectedUser = allowedUsers.find(u => u.id === userFilter.value);
-      if (!selectedUser) {
-        populateOrgs(allowedOrgs);
-        return;
-      }
-      populateOrgs([selectedUser.organisation]);
-      orgFilter.value = selectedUser.organisation;
-    });
-
-  } else if (user.type === "supervisor") {
-    filterContainer.style.display = "flex";
-    userFilterGroup.style.display = "block";
-
-    const sameOrgUsers = users.filter(u => u.organisation === user.organisation);
-    populateUsers(sameOrgUsers);
-
-  } else {
-    filterContainer.style.display = "none";
-  }
-
-  // --- helper functions for filter setup ---
+  // Helper: populate orgs/users with a leading "--"
   function populateOrgs(orgList) {
     orgFilter.innerHTML = `<option value="">--</option>`;
     orgList.forEach(o => {
@@ -156,7 +106,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       orgFilter.appendChild(opt);
     });
   }
-
   function populateUsers(userList) {
     userFilter.innerHTML = `<option value="">--</option>`;
     userList.forEach(u => {
@@ -168,18 +117,85 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ==============================================
+  // ✅ FILTER SETUP
+  // ==============================================
+  if (user.type === "admin" || user.type === "admin_user") {
+    filterContainer.style.display = "flex";
+    orgFilterGroup.style.display = "block";
+    userFilterGroup.style.display = "block";
+
+    const allowedOrgs = (user.type === "admin")
+      ? [...new Set(users.map(u => u.organisation))]
+      : ["SCI", "IRC", "UNICEF"];
+
+    let allowedUsers = users.filter(u => allowedOrgs.includes(u.organisation));
+
+    // Initial fill
+    populateOrgs(allowedOrgs);
+    populateUsers(allowedUsers);
+
+    // --- Coupled behavior ---
+
+    // 1) Organisation → limit Users to that org (or all if "--")
+    orgFilter.addEventListener("change", () => {
+      const selectedOrg = orgFilter.value; // "" means "--"
+      if (!selectedOrg) {
+        // No org chosen → show all allowed users
+        allowedUsers = users.filter(u => allowedOrgs.includes(u.organisation));
+        populateUsers(allowedUsers);
+        // do NOT force userFilter; keep as selected or "--"
+        return;
+      }
+      // Org chosen → show only that org’s users
+      const filteredUsers = users.filter(
+        u => allowedOrgs.includes(u.organisation) && u.organisation === selectedOrg
+      );
+      populateUsers(filteredUsers);
+      // If a user was previously selected from another org, it gets cleared to "--"
+    });
+
+    // 2) User → collapse Organisation to that user’s org (or all if "--")
+    userFilter.addEventListener("change", () => {
+      const selectedUser = users.find(u => u.id === userFilter.value);
+      if (!selectedUser) {
+        // User = "--" → restore all allowed orgs
+        if (user.type === "admin_user") {
+          populateOrgs(["SCI", "IRC", "UNICEF"]); // explicit per request
+        } else {
+          populateOrgs(allowedOrgs);
+        }
+        // keep org selection as-is (user might have set one)
+        return;
+      }
+      // User chosen → lock org list to only that org and set the value
+      populateOrgs([selectedUser.organisation]);
+      orgFilter.value = selectedUser.organisation;
+    });
+
+  } else if (user.type === "supervisor") {
+    filterContainer.style.display = "flex";
+    userFilterGroup.style.display = "block";
+    const sameOrgUsers = users.filter(u => u.organisation === user.organisation);
+    populateUsers(sameOrgUsers);
+  } else {
+    // monitor
+    filterContainer.style.display = "none";
+  }
+
+  // ==============================================
   // ✅ Populate User Dropdown in Table
   // ==============================================
   const populateUserDropdown = (select, preselectedUserId = "") => {
     select.innerHTML = "";
     let availableUsers = users;
 
-    if (user.type === "supervisor")
+    if (user.type === "supervisor") {
       availableUsers = users.filter(u => u.organisation === user.organisation);
-    else if (user.type === "monitor")
+    } else if (user.type === "monitor") {
       availableUsers = [user];
-    else if (user.type === "admin_user")
+    } else if (user.type === "admin_user") {
       availableUsers = users.filter(u => ["SCI", "IRC", "UNICEF"].includes(u.organisation));
+    }
 
     availableUsers.forEach(u => {
       const opt = document.createElement("option");
@@ -212,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setAccessByRole = (row) => {
     const allInputs = row.querySelectorAll("input, select");
 
-    if (["admin", "admin_user"].includes(user.type)) {
+    if (user.type === "admin" || user.type === "admin_user") {
       allInputs.forEach(el => (el.disabled = false));
       return;
     }
@@ -243,7 +259,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function buildAssignedCells(data) {
     const ymd = toYMD(data.dateassigned);
     const days = ymd ? daysBetweenYMD(ymd) : "";
-    if (["admin", "admin_user"].includes(user.type)) {
+    if (user.type === "admin" || user.type === "admin_user") {
       return `
         <td class="cell-dateassigned">
           <input type="date" class="dateassigned-input" value="${ymd || ""}">
@@ -306,6 +322,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ==============================================
+  // ✅ Live recompute of days elapsed when admin edits assigned date
+  // ==============================================
+  document.addEventListener("input", (e) => {
+    const el = e.target;
+    if (el.matches(".dateassigned-input")) {
+      const tr = el.closest("tr");
+      const daysCell = tr.querySelector(".cell-dayselapsed");
+      const ymd = el.value || "";
+      daysCell.textContent = ymd ? daysBetweenYMD(ymd) : "";
+    }
+  });
+
+  // ==============================================
   // ✅ Load Data
   // ==============================================
   async function loadFirestoreData() {
@@ -313,10 +342,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const incidentsRef = collection(db, "incidents");
       let q;
 
-      if (["admin", "admin_user"].includes(user.type)) q = incidentsRef;
-      else if (user.type === "supervisor")
+      if (user.type === "admin" || user.type === "admin_user") {
+        q = incidentsRef;
+      } else if (user.type === "supervisor") {
         q = query(incidentsRef, where("organisation", "==", user.organisation));
-      else q = query(incidentsRef, where("user_id", "==", user.id));
+      } else {
+        q = query(incidentsRef, where("user_id", "==", user.id));
+      }
 
       const snapshot = await getDocs(q);
       const orgSelected = orgFilter?.value || "";
@@ -326,12 +358,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
-        if (["admin", "admin_user"].includes(user.type)) {
+        if (user.type === "admin" || user.type === "admin_user") {
           if (orgSelected && data.organisation !== orgSelected) return;
           if (userSelected && data.user_id !== userSelected) return;
-        } else if (user.type === "supervisor" && userSelected && data.user_id !== userSelected)
-          return;
-
+        } else if (user.type === "supervisor") {
+          if (userSelected && data.user_id !== userSelected) return;
+        }
         addNewRow(data);
       });
 
@@ -353,6 +385,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("incidentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    if (!["admin", "admin_user", "supervisor", "monitor"].includes(user.type)) {
+      alert("You don’t have permission to save data.");
+      return;
+    }
+
     const rows = document.querySelectorAll("#incidentBody tr");
     if (!rows.length) {
       alert("No data to save.");
@@ -365,6 +402,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     rows.forEach(row => {
       const caseId = row.querySelector(".case_id").value.trim() ||
         `case_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
       let rec = { case_id: caseId, updatedBy: user.id, updatedAt: new Date().toISOString() };
 
       if (user.type === "monitor") {
@@ -372,6 +410,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         rec.violence = row.querySelector(".violence").value;
         rec.armedgroup = row.querySelector(".armedGroup").value;
         rec.incidentremarks = row.querySelector(".incidentRemarks").value;
+
       } else if (user.type === "supervisor") {
         rec.user_id = row.querySelector(".user_id").value;
         rec.organisation = row.querySelector(".organisation").value;
@@ -379,6 +418,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         rec.violence = row.querySelector(".violence").value;
         rec.armedgroup = row.querySelector(".armedGroup").value;
         rec.incidentremarks = row.querySelector(".incidentRemarks").value;
+
       } else {
         const orgVal = row.querySelector(".organisation").value;
         if (user.type === "admin_user" && !allowedOrgs.includes(orgVal)) return;
