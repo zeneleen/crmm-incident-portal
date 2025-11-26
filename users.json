@@ -166,5 +166,102 @@
     "password": "Irc123",
     "type": "monitor",
     "organisation": "IRC"
+  },
+  {
+    "id": "kaiser",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "isha",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "mokter",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "mirza",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "nasir",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "reshma",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "rimi",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "akhi",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "ayesha",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "pavel",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "jesmin",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "saddam",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "safaly",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "somaya",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "zing",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "zoynab",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
   }
+  
 ]
