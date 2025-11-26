@@ -1,136 +1,270 @@
-/* ====== GLOBAL RESET & BASE ====== */
+/* ===========================================
+   CRMM Portal Table — Optimized for 14" Laptop
+   =========================================== */
+
+/* ====== GLOBAL RESET ====== */
 html, body {
-  height:100%; margin:0; padding:0;
-  font-family:'Segoe UI', Arial, sans-serif;
-  background:#f4f7fa; color:#333;
-  font-size:14px;                /* baseline smaller than default */
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f4f7fa;
+  color: #333;
+  font-size: 14px;
 }
 
 /* ====== HEADER ====== */
-header{
-  display:flex; justify-content:space-between; align-items:center;
-  background:#2b3a67; color:#fff; padding:6px 14px;
-  box-shadow:0 2px 5px rgba(0,0,0,.1);
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2b3a67;
+  color: #fff;
+  padding: 6px 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,.1);
 }
-header .user-info{font-size:13px}
-header button{
-  background:#f04e4e; border:none; color:#fff; padding:5px 10px;
-  border-radius:4px; cursor:pointer; transition:.2s;
+header .user-info { font-size: 13px; }
+header button {
+  background: #f04e4e;
+  border: none;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: .2s;
 }
-header button:hover{background:#a82222}
+header button:hover { background: #a82222; }
 
 /* ====== MAIN ====== */
-main{padding:20px 28px}
-h2{
-  margin:10px 0 16px; text-align:center; color:#2b3a67;
-  font-weight:600; font-size:20px;
+main {
+  padding: 20px 28px;
+}
+h2 {
+  margin: 10px 0 16px;
+  text-align: center;
+  color: #2b3a67;
+  font-weight: 600;
+  font-size: 20px;
 }
 
 /* ====== FILTER BAR ====== */
-.filter-container{
-  display:flex; justify-content:flex-end; align-items:center; gap:12px;
-  background:#fff; padding:8px 12px; border-radius:8px;
-  margin-bottom:14px; box-shadow:0 2px 5px rgba(0,0,0,.06);
+.filter-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,.06);
 }
-.filter-container label{font-size:12.5px;font-weight:600;color:#2b3a67}
-.filter-container select{
-  padding:6px 8px; border:1px solid #ccd2da; border-radius:5px;
-  background:#f9fafc; min-width:140px; font-size:13px;
-  transition:border-color .2s,box-shadow .2s;
+.filter-container label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2b3a67;
 }
-.filter-container select:focus{
-  border-color:#1cabe2; box-shadow:0 0 4px rgba(28,171,226,.3); outline:none;
+.filter-container select {
+  padding: 6px 8px;
+  border: 1px solid #ccd2da;
+  border-radius: 5px;
+  background: #f9fafc;
+  min-width: 140px;
+  font-size: 13px;
+  transition: border-color .2s, box-shadow .2s;
 }
-#applyFilterBtn{
-  background:#2b3a67; color:#fff; border:none; padding:7px 12px;
-  border-radius:5px; cursor:pointer; font-weight:500; transition:background .3s;
+.filter-container select:focus {
+  border-color: #1cabe2;
+  box-shadow: 0 0 4px rgba(28,171,226,.3);
+  outline: none;
 }
-#applyFilterBtn:hover{background:#3b4d91}
+#applyFilterBtn {
+  background: #2b3a67;
+  color: #fff;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background .3s;
+}
+#applyFilterBtn:hover { background: #3b4d91; }
 
-/* ====== TABLE ====== */
-table{
-  border-collapse:separate; border-spacing:0; width:100%;
-  background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.05);
-  border-radius:8px; overflow:hidden;
-  display:block; max-height:68vh; overflow:auto;
-  scrollbar-width:thin; scrollbar-color:#ccd2da #f5f6f8;
+/* ====== TABLE WRAPPER ====== */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+  max-height: 68vh;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccd2da #f5f6f8;
 }
-thead, tbody, tr{display:table; width:100%; table-layout:fixed}
-thead{position:sticky; top:0; z-index:30}
-thead th{
-  background:#2b3a67; color:#fff; font-size:13px;
-  font-weight:600; text-align:center; padding:8px 6px;
-  border-bottom:2px solid #dee2e6; white-space:normal; line-height:1.3;
+thead, tbody, tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
-td{
-  background:#fff; padding:6px; border:1px solid #e3e6ea;
-  vertical-align:middle; text-align:center; white-space:normal;
-  font-size:13px;
-}
-tr:hover td{background:#e8f5fb; transition:.2s}
 
-/* ====== FIXED COLUMNS ====== */
-:root{
-  --col-case-id:180px;
-  --col-user-id:140px;
+/* ====== HEADER (UNIFORM COLOR) ====== */
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+thead th {
+  background: #2b3a67;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 6px;
+  border-bottom: 2px solid #dee2e6;
+  white-space: normal;
+  line-height: 1.3;
+}
+thead th:nth-child(1),
+thead th:nth-child(2) {
+  background: #2b3a67;  /* uniform with others */
+  color: #fff;
+  z-index: 31;
+}
+
+/* ====== BODY CELLS ====== */
+td {
+  background: #fff;
+  padding: 6px;
+  border: 1px solid #e3e6ea;
+  vertical-align: middle;
+  text-align: center;
+  white-space: normal;
+  font-size: 13px;
+}
+tr:hover td {
+  background: #e8f5fb;
+  transition: background-color .2s;
+}
+
+/* ====== FIXED/FROZEN COLUMNS ====== */
+:root {
+  --col-case-id: 180px;
+  --col-user-id: 140px;
+}
+thead th:nth-child(1),
+tbody td:nth-child(1) {
+  width: var(--col-case-id);
+  min-width: var(--col-case-id);
+  max-width: var(--col-case-id);
+  left: 0;
+}
+thead th:nth-child(2),
+tbody td:nth-child(2) {
+  width: var(--col-user-id);
+  min-width: var(--col-user-id);
+  max-width: var(--col-user-id);
+  left: var(--col-case-id);
+  box-shadow: -1px 0 0 #e3e6ea inset;
 }
 tbody td:nth-child(1),
-thead th:nth-child(1){
-  width:var(--col-case-id); min-width:var(--col-case-id); max-width:var(--col-case-id);
-  position:sticky; left:0; z-index:25; background:#fff;
+tbody td:nth-child(2) {
+  position: sticky;
+  z-index: 24;
+  background: #fff;
 }
-tbody td:nth-child(2),
-thead th:nth-child(2){
-  width:var(--col-user-id); min-width:var(--col-user-id); max-width:var(--col-user-id);
-  position:sticky; left:var(--col-case-id); z-index:24;
-  background:#fff; box-shadow:-1px 0 0 #e3e6ea inset;
-}
-td:nth-child(1) input, td:nth-child(2) select{
-  font-family:monospace; font-size:13px; width:100%;
-  white-space:nowrap; text-overflow:ellipsis; overflow:hidden;
+td:nth-child(1) input,
+td:nth-child(2) select {
+  font-family: monospace;
+  font-size: 13px;
+  width: 100%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 /* ====== INPUTS & SELECTS ====== */
-input, select{
-  width:100%; padding:8px 10px; border:1px solid #cbd3da; border-radius:4px;
-  background:#f9fafc; font-size:13px; box-sizing:border-box;
-  transition:border-color .2s,box-shadow .2s;
+input, select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd3da;
+  border-radius: 4px;
+  background: #f9fafc;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color .2s, box-shadow .2s;
 }
-input:focus,select:focus{
-  border-color:#1cabe2; box-shadow:0 0 3px rgba(28,171,226,.3); outline:none;
+input:focus, select:focus {
+  border-color: #1cabe2;
+  box-shadow: 0 0 3px rgba(28,171,226,.3);
+  outline: none;
 }
-select{
-  height:36px; appearance:none;
-  background-image:linear-gradient(45deg,transparent 50%,#555 50%),linear-gradient(135deg,#555 50%,transparent 50%);
-  background-position:calc(100% - 18px) center,calc(100% - 12px) center;
-  background-size:5px 5px,5px 5px; background-repeat:no-repeat;
+select {
+  height: 36px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #555 50%),
+    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 12px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
-input:disabled{background:#e9ecf0;color:#555;cursor:not-allowed}
+input:disabled {
+  background: #e9ecf0;
+  color: #555;
+  cursor: not-allowed;
+}
 
 /* ====== SUBMIT BUTTON ====== */
-#submitBtn{
-  display:block; width:200px; margin:16px auto;
-  background:#2b3a67; color:#fff; border:none; padding:10px;
-  border-radius:5px; font-size:15px; font-weight:500;
-  cursor:pointer; transition:background .3s,transform .1s;
+#submitBtn {
+  display: block;
+  width: 200px;
+  margin: 16px auto;
+  background: #2b3a67;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .3s, transform .1s;
 }
-#submitBtn:hover{background:#3b4d91; transform:translateY(-1px)}
-#message{text-align:center;font-weight:500;margin-top:6px;font-size:13px}
+#submitBtn:hover {
+  background: #3b4d91;
+  transform: translateY(-1px);
+}
+#message {
+  text-align: center;
+  font-weight: 500;
+  margin-top: 6px;
+  font-size: 13px;
+}
 
 /* ====== RESPONSIVE ====== */
-@media (max-width:1280px){
-  html,body{font-size:13px}
-  :root{--col-case-id:160px; --col-user-id:130px}
-  main{padding:18px 20px}
-  table{max-height:64vh}
+@media (max-width: 1280px) {
+  html, body { font-size: 13px; }
+  :root { --col-case-id: 160px; --col-user-id: 130px; }
+  main { padding: 18px 20px; }
+  table { max-height: 64vh; }
 }
-@media (max-width:992px){
-  table{font-size:12.5px; max-height:60vh}
-  input,select{font-size:12.5px; height:34px; padding:6px 8px}
-  thead th,td{padding:6px 5px}
+@media (max-width: 992px) {
+  table { font-size: 12.5px; max-height: 60vh; }
+  input, select { font-size: 12.5px; height: 34px; padding: 6px 8px; }
+  thead th, td { padding: 6px 5px; }
 }
-@media (max-width:768px){
-  .filter-container{flex-direction:column;align-items:stretch;gap:8px}
-  .filter-container select{width:100%;min-width:0}
-  #submitBtn{width:100%}
+@media (max-width: 768px) {
+  .filter-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .filter-container select {
+    width: 100%;
+    min-width: 0;
+  }
+  #submitBtn { width: 100%; }
 }
