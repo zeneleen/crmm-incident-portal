@@ -36,13 +36,13 @@
     "organisation": "UNICEF"
   },
   {
-    "id": "natalie",
+    "id": "shatabdi",
     "password": "Unicef123",
     "type": "admin_user",
     "organisation": "UNICEF"
   },
   {
-    "id": "shatabdi",
+    "id": "natalie",
     "password": "Unicef123",
     "type": "admin_user",
     "organisation": "UNICEF"
@@ -60,51 +60,9 @@
     "organisation": "SCI"
   },
   {
-    "id": "scifm1",
+    "id": "mahabuba",
     "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm2",
-    "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm3",
-    "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm4",
-    "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm5",
-    "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm6",
-    "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm7",
-    "password": "Sci123",
-    "type": "monitor",
-    "organisation": "SCI"
-  },
-  {
-    "id": "scifm8",
-    "password": "Sci123",
-    "type": "monitor",
+    "type": "supervisor",
     "organisation": "SCI"
   },
   {
@@ -123,54 +81,6 @@
     "id": "monalisa",
     "password": "Irc123",
     "type": "supervisor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm1",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm2",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm3",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm4",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm5",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm6",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm7",
-    "password": "Irc123",
-    "type": "monitor",
-    "organisation": "IRC"
-  },
-  {
-    "id": "ircfm8",
-    "password": "Irc123",
-    "type": "monitor",
     "organisation": "IRC"
   },
   {
@@ -211,6 +121,24 @@
   },
   {
     "id": "rimi",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "ircfm1",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "ircfm2",
+    "password": "Irc123",
+    "type": "monitor",
+    "organisation": "IRC"
+  },
+  {
+    "id": "ircfm3",
     "password": "Irc123",
     "type": "monitor",
     "organisation": "IRC"
@@ -265,6 +193,24 @@
   },
   {
     "id": "zoynab",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "scifm1",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "scifm2",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "scifm3",
     "password": "Sci123",
     "type": "monitor",
     "organisation": "SCI"
