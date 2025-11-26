@@ -120,6 +120,12 @@
     "organisation": "IRC"
   },
   {
+    "id": "monalisa",
+    "password": "Irc123",
+    "type": "supervisor",
+    "organisation": "IRC"
+  },
+  {
     "id": "ircfm1",
     "password": "Irc123",
     "type": "monitor",
