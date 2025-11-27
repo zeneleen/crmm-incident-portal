@@ -66,6 +66,24 @@
     "organisation": "SCI"
   },
   {
+    "id": "rabbi",
+    "password": "Sci123",
+    "type": "supervisor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "suma",
+    "password": "Sci123",
+    "type": "supervisor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "jannat",
+    "password": "Sci123",
+    "type": "supervisor",
+    "organisation": "SCI"
+  },
+  {
     "id": "samual",
     "password": "Irc123",
     "type": "supervisor",
@@ -145,7 +163,13 @@
   },
   {
     "id": "akhi",
-    "password": "Irc123",
+    "password": "Sci123",
+    "type": "monitor",
+    "organisation": "SCI"
+  },
+  {
+    "id": "aong",
+    "password": "Sci123",
     "type": "monitor",
     "organisation": "SCI"
   },
