@@ -102,6 +102,12 @@
     "organisation": "IRC"
   },
   {
+    "id": "sazid",
+    "password": "Irc123",
+    "type": "supervisor",
+    "organisation": "IRC"
+  },
+  {
     "id": "kaiser",
     "password": "Irc123",
     "type": "monitor",
